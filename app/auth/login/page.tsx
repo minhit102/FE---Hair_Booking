@@ -1,0 +1,109 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail, Lock, UserPlus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useSession, signIn } from "next-auth/react";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Email hoặc mật khẩu không đúng");
+      } else {
+        router.push("/");
+      }
+    } catch (error) {
+      setError("Đã xảy ra lỗi. Vui lòng thử lại sau.");
+    }
+  };
+
+  if (session) {
+    router.push("/");
+    return null;
+  }
+
+  return (
+    <div className="container flex h-screen w-screen flex-col items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">Đăng nhập</CardTitle>
+          <CardDescription className="text-center">
+            Nhập thông tin đăng nhập của bạn
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="password"
+                  placeholder="Mật khẩu"
+                  className="pl-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            {error && (
+              <div className="text-sm text-red-500 text-center">{error}</div>
+            )}
+            <Button type="submit" className="w-full">
+              Đăng nhập
+            </Button>
+          </form>
+          <div className="mt-4 text-center text-sm">
+            <span className="text-gray-500">Chưa có tài khoản? </span>
+            <Link
+              href="/auth/register"
+              className="text-primary hover:underline"
+            >
+              Đăng ký ngay
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
