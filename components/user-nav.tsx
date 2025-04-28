@@ -51,7 +51,7 @@ export function UserNav() {
   if (!user) {
     return (
       <Button variant="outline" size="sm" asChild>
-        <Link href="/login">Đăng nhập</Link>
+        <Link href="/auth/login">Đăng nhập</Link>
       </Button>
     );
   }

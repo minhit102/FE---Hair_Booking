@@ -1,6 +1,7 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,13 +14,9 @@ import Link from "next/link";
 import { Camera, LogIn, UserPlus } from "lucide-react";
 
 export default function TryHairstylePage() {
-  const { data: session, status } = useSession();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
-
-  if (!session) {
+  if (!isAuthenticated) {
     return (
       <div className="container py-12 px-4 md:px-6">
         <div className="max-w-2xl mx-auto text-center space-y-6">

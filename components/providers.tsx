@@ -1,11 +1,12 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Provider } from "react-redux";
+import { store } from "@/lib/store";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <Provider store={store}>
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
@@ -14,6 +15,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         {children}
       </ThemeProvider>
-    </SessionProvider>
+    </Provider>
   );
 }

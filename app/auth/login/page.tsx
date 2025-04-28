@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, UserPlus } from "lucide-react";
+import { useAppDispatch } from "@/lib/hooks";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from "@/lib/store/slices/authSlice";
+import { login } from "@/services/auth.api";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +21,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useSession, signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,28 +32,28 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    dispatch(loginStart());
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Email hoặc mật khẩu không đúng");
-      } else {
+      const response = await login({ email, password });
+      console.log(response);
+      if (response.statusCode === 200) {
+        localStorage.setItem("access_token", response.data.accessToken);
+        dispatch(
+          loginSuccess({
+            user: response.user,
+            token: response.token,
+          })
+        );
         router.push("/");
       }
-    } catch (error) {
-      setError("Đã xảy ra lỗi. Vui lòng thử lại sau.");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Email hoặc mật khẩu không đúng";
+      setError(errorMessage);
+      dispatch(loginFailure(errorMessage));
     }
   };
-
-  if (session) {
-    router.push("/");
-    return null;
-  }
 
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">

@@ -26,7 +26,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, subDays } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Textarea } from "@/components/ui/textarea";
-import { useSession } from "next-auth/react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 import { toast } from "sonner";
 
 // Dữ liệu mẫu cho đánh giá
@@ -88,7 +89,9 @@ export default function StylistDetailPage({
   params: { id: string };
 }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth
+  );
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -99,9 +102,9 @@ export default function StylistDetailPage({
 
   // Kiểm tra xem người dùng có thể đánh giá không
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       const userAppointments = completedAppointments.filter(
-        (app) => app.userId === session.user.id && app.stylistId === params.id
+        (app) => app.userId === user.id && app.stylistId === params.id
       );
 
       if (userAppointments.length > 0) {
@@ -114,7 +117,7 @@ export default function StylistDetailPage({
         }
       }
     }
-  }, [session, params.id]);
+  }, [user, params.id]);
 
   const handleSubmitReview = () => {
     if (!rating) {
@@ -242,7 +245,7 @@ export default function StylistDetailPage({
               <TabsTrigger value="booking">Đặt lịch</TabsTrigger>
             </TabsList>
             <TabsContent value="reviews" className="space-y-4">
-              {session?.user && canReview && !hasReviewed && (
+              {user && canReview && !hasReviewed && (
                 <Card>
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -288,7 +291,7 @@ export default function StylistDetailPage({
                   </CardContent>
                 </Card>
               )}
-              {!session?.user && (
+              {!user && (
                 <Card>
                   <CardContent className="p-6">
                     <p className="text-center text-gray-500">
@@ -297,7 +300,7 @@ export default function StylistDetailPage({
                   </CardContent>
                 </Card>
               )}
-              {session?.user && !canReview && !hasReviewed && (
+              {user && !canReview && !hasReviewed && (
                 <Card>
                   <CardContent className="p-6">
                     <p className="text-center text-gray-500">
