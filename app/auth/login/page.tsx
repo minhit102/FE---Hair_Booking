@@ -36,13 +36,17 @@ export default function LoginPage() {
 
     try {
       const response = await login({ email, password });
-      console.log(response);
       if (response.statusCode === 200) {
-        localStorage.setItem("access_token", response.data.accessToken);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            access_token: response?.data?.accessToken,
+          })
+        );
         dispatch(
           loginSuccess({
-            user: response.user,
-            token: response.token,
+            user: response.data,
+            token: response.data.accessToken,
           })
         );
         router.push("/");

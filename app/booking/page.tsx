@@ -45,40 +45,10 @@ import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { getServiceList } from "@/services/service/get-service-list.api";
 
 // Dữ liệu mẫu cho dịch vụ
-const services = [
-  {
-    id: "haircut-men",
-    name: "Cắt tóc nam",
-    price: "100.000đ",
-    duration: "30 phút",
-  },
-  {
-    id: "haircut-women",
-    name: "Cắt tóc nữ",
-    price: "150.000đ",
-    duration: "45 phút",
-  },
-  {
-    id: "hair-coloring",
-    name: "Nhuộm tóc",
-    price: "300.000đ",
-    duration: "90 phút",
-  },
-  {
-    id: "combo-1",
-    name: "Combo VIP Nam",
-    price: "250.000đ",
-    duration: "90 phút",
-  },
-  {
-    id: "combo-2",
-    name: "Combo VIP Nữ",
-    price: "350.000đ",
-    duration: "120 phút",
-  },
-];
+const services = await getServiceList();
 
 // Dữ liệu mẫu cho nhân viên
 const stylists = [
@@ -182,7 +152,7 @@ export default function BookingPage() {
                       <span>
                         {
                           services.find(
-                            (s) => s.id === form.getValues("service")
+                            (s: any) => s.id === form.getValues("service")
                           )?.name
                         }
                       </span>
@@ -313,7 +283,7 @@ export default function BookingPage() {
         {step === 1 && (
           <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {services.map((service) => (
+              {services.map((service: any) => (
                 <Card
                   key={service.id}
                   className={cn(
@@ -374,19 +344,22 @@ export default function BookingPage() {
                         <div>
                           <p className="font-medium">
                             {
-                              services.find((s) => s.id === selectedService)
-                                ?.name
+                              services.find(
+                                (s: any) => s._id === selectedService
+                              )?.name
                             }
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {
-                              services.find((s) => s.id === selectedService)
-                                ?.duration
+                              services.find(
+                                (s: any) => s._id === selectedService
+                              )?.duration
                             }{" "}
                             •{" "}
                             {
-                              services.find((s) => s.id === selectedService)
-                                ?.price
+                              services.find(
+                                (s: any) => s._id === selectedService
+                              )?.price
                             }
                           </p>
                         </div>
