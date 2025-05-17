@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 
 export function BranchSettings() {
   const [branchInfo, setBranchInfo] = useState({
-    name: "Salon Tóc Đẹp - Chi nhánh Quận 1",
+    name: "Salon Tóc Đẹp - Chi nhánh Quận 111",
     address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
     phone: "028 1234 5678",
     email: "quan1@salontoc.com",

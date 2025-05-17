@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/axios";
 
 export interface RegisterUserData {
   username: string;
@@ -7,8 +7,18 @@ export interface RegisterUserData {
   phone?: string;
   address?: string;
 }
+export interface LoginAdminData {
+  email: string;
+  password: string;
+}
 
-export async function registerUser(data: RegisterUserData) {
-  const response = await axios.post("/auth/register", data);
-  return response.data;
+export async function loginAdmin(data: LoginAdminData) {
+  try {
+    const response = await api.post("/admin/auth/login", data);
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
 }

@@ -23,15 +23,14 @@ import { MoreHorizontal, Plus } from "lucide-react";
 const users = [
   {
     id: 1,
-    name: "Nguyễn Văn Admin",
-    email: "admin@example.com",
+    name: "Nguyễn Văn Admin1om",
     role: "admin",
-    branch: "Chi nhánh Quận 1",
+    branch: "Chi nhánh Quận Minh1",
     lastActive: "Hôm nay, 10:23",
   },
   {
     id: 2,
-    name: "Trần Thị Quản Lý",
+    name: "Trần Thị Quản Lý1",
     email: "manager@example.com",
     role: "admin",
     branch: "Chi nhánh Quận 3",
@@ -39,15 +38,15 @@ const users = [
   },
   {
     id: 3,
-    name: "Lê Văn Trợ Lý",
+    name: "Lê Văn Trợ Lý1",
     email: "assistant@example.com",
     role: "assistant",
-    branch: "Chi nhánh Quận 1",
+    branch: "Chi nhánh Quận Minh2",
     lastActive: "Hôm qua, 17:30",
   },
   {
     id: 4,
-    name: "Phạm Thị Nhân Viên",
+    name: "Phạm Thị Nhân Viên11",
     email: "staff@example.com",
     role: "staff",
     branch: "Chi nhánh Quận 1",

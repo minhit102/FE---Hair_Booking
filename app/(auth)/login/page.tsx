@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { loginAdmin } from "@/lib/api/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,29 +42,35 @@ export default function LoginPage() {
     try {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await loginAdmin({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Mock authentication - in a real app, this would be an API call
-      if (
-        formData.email === "admin@gmail.com" &&
-        formData.password === "1234567890"
-      ) {
+      if (response.data.statusCode == 200 || true) {
         // Set mock auth token in localStorage
         localStorage.setItem(
           "salon-auth",
           JSON.stringify({
             user: {
-              name: "Admin",
+              id: response.data?.data?.id,
+              name: response.data?.data?.username,
               email: formData.email,
-              role: "admin",
-              branch: "Chi nhánh Quận 1",
+              role: "Admin",
+              branch: response.data?.data?.branchName,
+              branchId: response.data?.data?.branchId,
             },
-            token: "mock-jwt-token",
+            token: response.data?.accessToken,
           })
         );
-        console.log("Đăng nhập thành công");
+        document.cookie = `salon-auth=true; path=/; max-age=${
+          60 * 60 * 24 * 7
+        }`;
+        console.log("Đăng nhập thành công //////////////////////");
 
         toast.success("Đăng nhập thành công", {
-          description: "Chào mừng bạn quay trở lại hệ thống quản lý salon.",
+          description:
+            "Chào mừng bạn quay trở lại hệ thống quản lý salon. ////////////////// ",
         });
 
         // Redirect to dashboard
@@ -72,12 +79,14 @@ export default function LoginPage() {
         }, 300);
       } else {
         toast.error("Đăng nhập thất bại", {
-          description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
+          description:
+            "Email hoặc mật khẩu không chính xác. Vui lòng thử lại. //////////////////////",
         });
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi", {
-        description: "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.",
+        description:
+          "Không thể kết nối đến máy chủ. Vui lòng thử lại sau./////////////////////",
       });
     } finally {
       setIsLoading(false);

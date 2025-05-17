@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider"; // 👈 Thêm AuthProvider ở đây
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
           {" "}
           {/* 👈 Bọc children ở đây */}
           {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
