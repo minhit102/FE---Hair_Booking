@@ -80,8 +80,6 @@ export function CustomerRegistrationForm() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      console.log(values);
-
       toast.success("Thông tin khách hàng đã được lưu vào hệ thống");
 
       setIsSuccess(true);

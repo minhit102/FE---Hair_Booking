@@ -15,7 +15,6 @@ export interface LoginAdminData {
 export async function loginAdmin(data: LoginAdminData) {
   try {
     const response = await api.post("/admin/auth/login", data);
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Login error:", error);

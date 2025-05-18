@@ -130,7 +130,7 @@ export function SidebarNav() {
                     {user?.name || "Admin"}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {user?.branch || "Chi nhánh Quận 1"}
+                    {user?.branchName || "Chi nhánh Quận 1"}
                   </span>
                 </div>
               </div>

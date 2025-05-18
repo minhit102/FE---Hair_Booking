@@ -38,7 +38,6 @@ export function UserNav() {
   const [mounted, setMounted] = useState(false);
   const authUser = useSelector((state: RootState) => state.auth.user);
   const [user, setUser] = useState<UserData | null>(null);
-  console.log("authUser", authUser);
 
   useEffect(() => {
     setMounted(true);

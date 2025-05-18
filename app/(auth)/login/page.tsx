@@ -47,18 +47,18 @@ export default function LoginPage() {
         password: formData.password,
       });
 
-      if (response.data.statusCode == 200 || true) {
+      if (response.statusCode == 200) {
         // Set mock auth token in localStorage
         localStorage.setItem(
           "salon-auth",
           JSON.stringify({
             user: {
-              id: response.data?.data?.id,
-              name: response.data?.data?.username,
+              id: response.data?.id,
+              name: response.data?.username,
               email: formData.email,
               role: "Admin",
-              branch: response.data?.data?.branchName,
-              branchId: response.data?.data?.branchId,
+              branchId: response.data?.branchId,
+              branchName: response.data?.branchName,
             },
             token: response.data?.accessToken,
           })
@@ -66,11 +66,9 @@ export default function LoginPage() {
         document.cookie = `salon-auth=true; path=/; max-age=${
           60 * 60 * 24 * 7
         }`;
-        console.log("Đăng nhập thành công //////////////////////");
 
         toast.success("Đăng nhập thành công", {
-          description:
-            "Chào mừng bạn quay trở lại hệ thống quản lý salon. ////////////////// ",
+          description: "Chào mừng bạn quay trở lại hệ thống quản lý salon.  ",
         });
 
         // Redirect to dashboard
@@ -79,14 +77,12 @@ export default function LoginPage() {
         }, 300);
       } else {
         toast.error("Đăng nhập thất bại", {
-          description:
-            "Email hoặc mật khẩu không chính xác. Vui lòng thử lại. //////////////////////",
+          description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
         });
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi", {
-        description:
-          "Không thể kết nối đến máy chủ. Vui lòng thử lại sau./////////////////////",
+        description: "Không thể kết nối đến máy chủ. Vui lòng thử lại sau",
       });
     } finally {
       setIsLoading(false);
