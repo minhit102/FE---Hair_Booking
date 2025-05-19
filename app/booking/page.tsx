@@ -6,7 +6,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { CalendarIcon, Check, Clock, Scissors } from "lucide-react";
+import {
+  CalendarIcon,
+  Check,
+  Clock,
+  LogIn,
+  Scissors,
+  UserPlus,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -46,19 +53,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { getServiceList } from "@/services/service/get-service-list.api";
+import { getBranchsList } from "@/services/service/get-branchs-list.api";
+import { toast } from "sonner";
+import { createAppointment } from "@/services/appointment/appointment";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 // Dữ liệu mẫu cho dịch vụ
 const services = await getServiceList();
-
+const branchs = await getBranchsList();
 // Dữ liệu mẫu cho nhân viên
-const stylists = [
-  { id: "stylist-1", name: "Nguyễn Văn A", speciality: "Tóc nam" },
-  { id: "stylist-2", name: "Trần Thị B", speciality: "Tóc nữ" },
-  { id: "stylist-3", name: "Lê Văn C", speciality: "Nhuộm tóc" },
-];
 
 // Dữ liệu mẫu cho khung giờ
 const timeSlots = [
+  "08:00",
+  "08:30",
   "09:00",
   "09:30",
   "10:00",
@@ -75,17 +84,18 @@ const timeSlots = [
   "16:30",
   "17:00",
   "17:30",
+  "18:00",
 ];
 
 // Schema cho form đặt lịch
 const formSchema = z.object({
   service: z.string({ required_error: "Vui lòng chọn dịch vụ" }),
-  stylist: z.string({ required_error: "Vui lòng chọn thợ cắt tóc" }),
+  branch: z.string({ required_error: "Vui lòng chọn Branch" }),
+  // stylist: z.string({ required_error: "Vui lòng chọn thợ cắt tóc" }),
   date: z.date({ required_error: "Vui lòng chọn ngày" }),
   time: z.string({ required_error: "Vui lòng chọn giờ" }),
   name: z.string().min(2, { message: "Vui lòng nhập tên của bạn" }),
   phone: z.string().min(10, { message: "Vui lòng nhập số điện thoại hợp lệ" }),
-  email: z.string().email({ message: "Vui lòng nhập email hợp lệ" }),
   notes: z.string().optional(),
 });
 
@@ -93,13 +103,13 @@ export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [isBookingComplete, setIsBookingComplete] = useState(false);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       phone: "",
-      email: "",
       notes: "",
     },
   });
@@ -110,10 +120,35 @@ export default function BookingPage() {
     setStep(2);
   };
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // Xử lý đặt lịch ở đây
-    setIsBookingComplete(true);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const hour = values.time.split(":")[0];
+    const minute = values.time.split(":")[1];
+    const date = new Date(values.date);
+    date.setHours(parseInt(hour));
+    date.setMinutes(parseInt(minute));
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+
+    try {
+      const response = await createAppointment({
+        branchId: values.branch,
+        serviceId: values.service,
+        date: date,
+        phone: values.phone,
+        notes: values.notes,
+        username: values.name,
+      });
+
+      console.log("==========================================", response);
+      if (response.status === 201) {
+        toast.success("Đặt lịch thành công");
+        setIsBookingComplete(true);
+      } else {
+        toast.error("Xin lỗi, khung giờ bạn chọn hiện không còn trống.");
+      }
+    } catch (error) {
+      toast.error("Xin lỗi, khung giờ bạn chọn hiện không còn trống.");
+    }
   }
 
   if (isBookingComplete) {
@@ -136,7 +171,7 @@ export default function BookingPage() {
                 <div className="grid gap-2">
                   <div className="font-medium">Thông tin đặt lịch</div>
                   <div className="grid gap-1 text-sm">
-                    <div className="flex justify-between">
+                    {/* <div className="flex justify-between">
                       <span className="text-muted-foreground">
                         Mã đặt lịch:
                       </span>
@@ -146,23 +181,13 @@ export default function BookingPage() {
                           .toString()
                           .padStart(4, "0")}
                       </span>
-                    </div>
+                    </div> */}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Dịch vụ:</span>
                       <span>
                         {
                           services.find(
-                            (s: any) => s.id === form.getValues("service")
-                          )?.name
-                        }
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Nhân viên:</span>
-                      <span>
-                        {
-                          stylists.find(
-                            (s) => s.id === form.getValues("stylist")
+                            (s: any) => s._id === form.getValues("service")
                           )?.name
                         }
                       </span>
@@ -195,10 +220,6 @@ export default function BookingPage() {
                       </span>
                       <span>{form.getValues("phone")}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Email:</span>
-                      <span>{form.getValues("email")}</span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -212,6 +233,34 @@ export default function BookingPage() {
               </Button>
             </CardFooter>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container py-12 px-4 md:px-6">
+        <div className="max-w-2xl mx-auto text-center space-y-6">
+          <h1 className="text-3xl font-bold tracking-tighter">Thử Kiểu Tóc</h1>
+          <p className="text-gray-500">
+            Để sử dụng tính năng thử kiểu tóc, vui lòng đăng nhập hoặc đăng ký
+            tài khoản.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild>
+              <Link href="/auth/login" className="flex items-center gap-2">
+                <LogIn className="h-4 w-4" />
+                Đăng nhập
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/auth/register" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Đăng ký
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -290,7 +339,7 @@ export default function BookingPage() {
                     "cursor-pointer transition-all hover:border-primary",
                     selectedService === service.id && "border-primary"
                   )}
-                  onClick={() => handleServiceSelect(service.id)}
+                  onClick={() => handleServiceSelect(service._id)}
                 >
                   <CardHeader>
                     <CardTitle>{service.name}</CardTitle>
@@ -376,26 +425,26 @@ export default function BookingPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                       <FormField
                         control={form.control}
-                        name="stylist"
+                        name="branch"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Thợ cắt tóc</FormLabel>
+                            <FormLabel>Chọn Branch </FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Chọn thợ cắt tóc" />
+                                  <SelectValue placeholder="Chọn Branch" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {stylists.map((stylist) => (
+                                {branchs.map((branch: any) => (
                                   <SelectItem
-                                    key={stylist.id}
-                                    value={stylist.id}
+                                    key={branch._id}
+                                    value={branch._id}
                                   >
-                                    {stylist.name} - {stylist.speciality}
+                                    {branch.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -511,23 +560,6 @@ export default function BookingPage() {
                         )}
                       />
                     </div>
-
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="example@example.com"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     <FormField
                       control={form.control}
