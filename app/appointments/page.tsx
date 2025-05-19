@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getAppointments } from "@/services/appointment/appointment";
 
 type Appointment = {
+  id: number;
   _id: string;
   service: string;
   date: Date;
@@ -85,7 +86,8 @@ export default function AppointmentsPage() {
         // const appointments = await appointmentsResponse.json();
 
         const appointmentsData = appointmentsResponse.map(
-          (appointment: any) => ({
+          (appointment: any, index: number) => ({
+            id: index + 1,
             _id: appointment._id,
             service: appointment.service,
             date: new Date(appointment.date).toLocaleString("vi-VN"),
@@ -125,7 +127,7 @@ export default function AppointmentsPage() {
   const appointmentColumnHelper = createColumnHelper<Appointment>();
   const appointmentColumns = useMemo(
     () => [
-      appointmentColumnHelper.accessor("_id", { header: "STT" }),
+      appointmentColumnHelper.accessor("id", { header: "STT" }),
       appointmentColumnHelper.accessor("service", { header: "Dịch vụ" }),
       appointmentColumnHelper.accessor("date", { header: "Thời gian đặt" }),
       appointmentColumnHelper.accessor("username", { header: "Họ tên" }),
