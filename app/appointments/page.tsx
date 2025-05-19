@@ -10,16 +10,17 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { getAppointments } from "@/services/appointment/appointment";
 
 type Appointment = {
-  id: string;
+  _id: string;
   service: string;
-  date: string;
-  time: string;
-  name: string;
+  date: Date;
+  username: string;
   phone: string;
   notes: string;
-  status: "pending" | "cancelled";
+  branch: string;
+  status: "accepted" | "cancelled";
 };
 
 type ServiceHistory = {
@@ -35,7 +36,83 @@ export default function AppointmentsPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") || "appointments";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [appointmentsData, setAppointmentsData] = useState<Appointment[]>([]);
+  const [serviceHistoryData, setServiceHistoryData] = useState<
+    ServiceHistory[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Hàm tạo dữ liệu giả cho historyResponse
+  const getFakeHistoryData = (): ServiceHistory[] => [
+    {
+      id: "1",
+      date: "2025-05-18",
+      service: "Cắt tóc nữ",
+      stylist: "Lê Thị C",
+      total: "150.000đ",
+    },
+    {
+      id: "2",
+      date: "2025-05-17",
+      service: "Nhuộm tóc",
+      stylist: "Phạm Văn D",
+      total: "200.000đ",
+    },
+    {
+      id: "3",
+      date: "2025-05-16",
+      service: "Uốn tóc",
+      stylist: "Nguyễn Thị E",
+      total: "300.000đ",
+    },
+    {
+      id: "4",
+      date: "2025-05-15",
+      service: "Gội đầu massage",
+      stylist: "Trần Văn F",
+      total: "100.000đ",
+    },
+  ];
+
+  // Gọi API và sử dụng dữ liệu giả cho historyResponse
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Gọi API cho appointments (giữ nguyên nếu bạn muốn gọi API thật)
+        const appointmentsResponse = await getAppointments();
+        // const appointments = await appointmentsResponse.json();
+
+        const appointmentsData = appointmentsResponse.map(
+          (appointment: any) => ({
+            _id: appointment._id,
+            service: appointment.service,
+            date: new Date(appointment.date).toLocaleString("vi-VN"),
+            username: appointment.username,
+            branch: appointment.branch,
+            phone: appointment.phone,
+            notes: appointment.notes,
+            status: appointment.status,
+          })
+        );
+
+        setAppointmentsData(appointmentsData);
+
+        // Sử dụng dữ liệu giả cho historyResponse thay vì gọi API
+        const history = getFakeHistoryData();
+        setServiceHistoryData(history);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Lỗi get data ");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Cập nhật tab khi search params thay đổi
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
@@ -45,74 +122,53 @@ export default function AppointmentsPage() {
     router.replace(`?tab=${newTab}`, { scroll: false });
   };
 
-  const appointmentsData = useMemo<Appointment[]>(
-    () => [
-      {
-        id: "1",
-        service: "Nhuộm tóc",
-        date: "2025-05-20",
-        time: "10:00",
-        name: "Nguyễn Văn A",
-        phone: "0987654321",
-        notes: "Nhuộm màu đỏ",
-        status: "pending",
-      },
-      {
-        id: "2",
-        service: "Cắt tóc nam",
-        date: "2025-05-19",
-        time: "14:00",
-        name: "Trần Thị B",
-        phone: "0912345678",
-        notes: "Cắt ngắn",
-        status: "cancelled",
-      },
-    ],
-    []
-  );
-
-  const serviceHistoryData = useMemo<ServiceHistory[]>(
-    () => [
-      {
-        id: "1",
-        date: "2025-05-18",
-        service: "Cắt tóc nữ",
-        stylist: "Lê Thị C",
-        total: "150.000đ",
-      },
-      {
-        id: "2",
-        date: "2025-05-17",
-        service: "Nhuộm tóc",
-        stylist: "Phạm Văn D",
-        total: "200.000đ",
-      },
-    ],
-    []
-  );
-
   const appointmentColumnHelper = createColumnHelper<Appointment>();
   const appointmentColumns = useMemo(
     () => [
-      appointmentColumnHelper.accessor("id", { header: "STT" }),
+      appointmentColumnHelper.accessor("_id", { header: "STT" }),
       appointmentColumnHelper.accessor("service", { header: "Dịch vụ" }),
-      appointmentColumnHelper.accessor("time", { header: "Thời gian đặt" }),
-      appointmentColumnHelper.accessor("name", { header: "Họ tên" }),
+      appointmentColumnHelper.accessor("date", { header: "Thời gian đặt" }),
+      appointmentColumnHelper.accessor("username", { header: "Họ tên" }),
       appointmentColumnHelper.accessor("phone", { header: "Số điện thoại" }),
       appointmentColumnHelper.accessor("notes", { header: "Ghi chú" }),
+      appointmentColumnHelper.accessor("branch", { header: "Chi nhánh" }),
       appointmentColumnHelper.accessor("status", {
         header: "Trạng thái",
-        cell: (info) => (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              info.getValue() === "pending"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {info.getValue() === "pending" ? "Chờ xác nhận" : "Đã hủy"}
-          </span>
-        ),
+        cell: (info) => {
+          const status = info.getValue();
+          const isAccepted = status === "accepted";
+          const appointmentDate = new Date(info.row.original.date);
+          const isFuture = appointmentDate > new Date();
+
+          return (
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                isAccepted
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {isAccepted ? (
+                <div className="flex items-center gap-2">
+                  <span>Xác nhận</span>
+                  {isFuture && (
+                    <button
+                      onClick={() =>
+                        // handleCancelAppointment(info.row.original.id)
+                        console.log(info.row.original._id)
+                      }
+                      className="text-red-600 hover:text-red-800 text-xs underline"
+                    >
+                      Hủy lịch
+                    </button>
+                  )}
+                </div>
+              ) : (
+                "Đã hủy"
+              )}
+            </span>
+          );
+        },
       }),
     ],
     []
@@ -141,6 +197,14 @@ export default function AppointmentsPage() {
     columns: serviceHistoryColumns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  if (isLoading) {
+    return <div className="container py-12">Đang tải...</div>;
+  }
+
+  if (error) {
+    return <div className="container py-12">Lỗi: {error}</div>;
+  }
 
   return (
     <div className="container py-12">
