@@ -62,9 +62,31 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    restoreAuthState: (state) => {
+      if (typeof window !== "undefined") {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          try {
+            const userData = JSON.parse(userStr);
+            state.user = userData.user;
+            state.token = userData.access_token;
+            state.isAuthenticated = true;
+          } catch (error) {
+            console.error("Error parsing user data from localStorage:", error);
+            localStorage.removeItem("user");
+          }
+        }
+      }
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, clearError } =
-  authSlice.actions;
+export const {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout,
+  clearError,
+  restoreAuthState,
+} = authSlice.actions;
 export default authSlice.reducer;

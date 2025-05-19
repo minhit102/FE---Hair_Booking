@@ -35,13 +35,12 @@ interface UserData {
 
 export function UserNav() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const authUser = useSelector((state: RootState) => state.auth.user);
   const [user, setUser] = useState<UserData | null>(null);
-  console.log("authUser", authUser);
 
   useEffect(() => {
-    setMounted(true);
+    setIsLoading(false);
     if (authUser) {
       setUser(authUser);
     }
@@ -54,8 +53,8 @@ export function UserNav() {
     router.push("/auth/login");
   };
 
-  if (!mounted) {
-    return null; // Hoặc return một loading state
+  if (isLoading) {
+    return <div className="h-8 w-8" />; // Placeholder with same dimensions
   }
 
   if (!user) {

@@ -1,402 +1,281 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { useEffect, useMemo, useState } from "react";
 import {
-  CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Scissors,
-  User,
-} from "lucide-react";
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  createColumnHelper,
+} from "@tanstack/react-table";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
+type Appointment = {
+  id: string;
+  service: string;
+  date: string;
+  time: string;
+  name: string;
+  phone: string;
+  notes: string;
+  status: "pending" | "cancelled";
+};
 
-// Dữ liệu mẫu cho lịch sử đặt lịch
-const appointments = [
-  {
-    id: "app-1",
-    service: "Cắt tóc nam",
-    hairstyle: "Undercut",
-    stylist: "Nguyễn Văn A",
-    date: new Date(2024, 4, 15),
-    time: "10:00",
-    status: "upcoming",
-    price: "100.000đ",
-  },
-  {
-    id: "app-2",
-    service: "Nhuộm tóc",
-    hairstyle: "Highlight",
-    stylist: "Trần Thị B",
-    date: new Date(2024, 4, 10),
-    time: "14:30",
-    status: "completed",
-    price: "300.000đ",
-  },
-  {
-    id: "app-3",
-    service: "Combo VIP Nam",
-    hairstyle: "Pompadour",
-    stylist: "Lê Văn C",
-    date: new Date(2024, 3, 28),
-    time: "09:00",
-    status: "completed",
-    price: "250.000đ",
-  },
-  {
-    id: "app-4",
-    service: "Cắt tóc nữ",
-    hairstyle: "Bob",
-    stylist: "Phạm Thị D",
-    date: new Date(2024, 3, 20),
-    time: "15:30",
-    status: "cancelled",
-    price: "150.000đ",
-  },
-];
+type ServiceHistory = {
+  id: string;
+  date: string;
+  service: string;
+  stylist: string;
+  total: string;
+};
 
 export default function AppointmentsPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [filter, setFilter] = useState("all");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "appointments";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-  const filteredAppointments = appointments.filter((app) => {
-    if (filter === "all") return true;
-    return app.status === filter;
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    router.replace(`?tab=${newTab}`, { scroll: false });
+  };
+
+  const appointmentsData = useMemo<Appointment[]>(
+    () => [
+      {
+        id: "1",
+        service: "Nhuộm tóc",
+        date: "2025-05-20",
+        time: "10:00",
+        name: "Nguyễn Văn A",
+        phone: "0987654321",
+        notes: "Nhuộm màu đỏ",
+        status: "pending",
+      },
+      {
+        id: "2",
+        service: "Cắt tóc nam",
+        date: "2025-05-19",
+        time: "14:00",
+        name: "Trần Thị B",
+        phone: "0912345678",
+        notes: "Cắt ngắn",
+        status: "cancelled",
+      },
+    ],
+    []
+  );
+
+  const serviceHistoryData = useMemo<ServiceHistory[]>(
+    () => [
+      {
+        id: "1",
+        date: "2025-05-18",
+        service: "Cắt tóc nữ",
+        stylist: "Lê Thị C",
+        total: "150.000đ",
+      },
+      {
+        id: "2",
+        date: "2025-05-17",
+        service: "Nhuộm tóc",
+        stylist: "Phạm Văn D",
+        total: "200.000đ",
+      },
+    ],
+    []
+  );
+
+  const appointmentColumnHelper = createColumnHelper<Appointment>();
+  const appointmentColumns = useMemo(
+    () => [
+      appointmentColumnHelper.accessor("id", { header: "STT" }),
+      appointmentColumnHelper.accessor("service", { header: "Dịch vụ" }),
+      appointmentColumnHelper.accessor("time", { header: "Thời gian đặt" }),
+      appointmentColumnHelper.accessor("name", { header: "Họ tên" }),
+      appointmentColumnHelper.accessor("phone", { header: "Số điện thoại" }),
+      appointmentColumnHelper.accessor("notes", { header: "Ghi chú" }),
+      appointmentColumnHelper.accessor("status", {
+        header: "Trạng thái",
+        cell: (info) => (
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              info.getValue() === "pending"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {info.getValue() === "pending" ? "Chờ xác nhận" : "Đã hủy"}
+          </span>
+        ),
+      }),
+    ],
+    []
+  );
+
+  const historyColumnHelper = createColumnHelper<ServiceHistory>();
+  const serviceHistoryColumns = useMemo(
+    () => [
+      historyColumnHelper.accessor("id", { header: "STT" }),
+      historyColumnHelper.accessor("date", { header: "Ngày cắt tóc" }),
+      historyColumnHelper.accessor("service", { header: "Dịch vụ" }),
+      historyColumnHelper.accessor("stylist", { header: "Tên thợ cắt tóc" }),
+      historyColumnHelper.accessor("total", { header: "Tổng tiền" }),
+    ],
+    []
+  );
+
+  const appointmentsTable = useReactTable({
+    data: appointmentsData,
+    columns: appointmentColumns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const serviceHistoryTable = useReactTable({
+    data: serviceHistoryData,
+    columns: serviceHistoryColumns,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   return (
-    <div className="container py-12 px-4 md:px-6">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tighter">
-              Lịch hẹn của tôi
-            </h1>
-            <p className="text-gray-500">
-              Quản lý và theo dõi các lịch hẹn cắt tóc của bạn
-            </p>
-          </div>
-          <Button asChild>
-            <Link href="/booking">
-              <Scissors className="mr-2 h-4 w-4" />
-              Đặt lịch mới
-            </Link>
-          </Button>
-        </div>
+    <div className="container py-12">
+      <div className="flex mb-6 border-b">
+        <a
+          href="?tab=appointments"
+          onClick={(e) => {
+            e.preventDefault();
+            handleTabChange("appointments");
+          }}
+          className={`px-6 py-3 font-medium text-lg cursor-pointer ${
+            activeTab === "appointments"
+              ? "border-b-2 border-blue-500 text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Lịch hẹn
+        </a>
+        <a
+          href="?tab=history"
+          onClick={(e) => {
+            e.preventDefault();
+            handleTabChange("history");
+          }}
+          className={`px-6 py-3 font-medium text-lg cursor-pointer ${
+            activeTab === "history"
+              ? "border-b-2 border-blue-500 text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Lịch sử dịch vụ
+        </a>
+      </div>
 
-        <div className="grid gap-6 md:grid-cols-[250px_1fr]">
-          <div className="space-y-6">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === "appointments" ? (
             <Card>
               <CardHeader>
-                <CardTitle>Lịch</CardTitle>
+                <CardTitle>Lịch hẹn</CardTitle>
               </CardHeader>
               <CardContent>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? (
-                        format(date, "PPP", { locale: vi })
-                      ) : (
-                        <span>Chọn ngày</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Bộ lọc</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Button
-                    variant={filter === "all" ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setFilter("all")}
-                  >
-                    Tất cả
-                  </Button>
-                  <Button
-                    variant={filter === "upcoming" ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setFilter("upcoming")}
-                  >
-                    Sắp tới
-                  </Button>
-                  <Button
-                    variant={filter === "completed" ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setFilter("completed")}
-                  >
-                    Đã hoàn thành
-                  </Button>
-                  <Button
-                    variant={filter === "cancelled" ? "default" : "outline"}
-                    className="w-full justify-start"
-                    onClick={() => setFilter("cancelled")}
-                  >
-                    Đã hủy
-                  </Button>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      {appointmentsTable
+                        .getHeaderGroups()
+                        .map((headerGroup) => (
+                          <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <th
+                                key={header.id}
+                                className="px-4 py-2 text-left"
+                              >
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                    </thead>
+                    <tbody>
+                      {appointmentsTable.getRowModel().rows.map((row) => (
+                        <tr key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <td key={cell.id} className="px-4 py-2">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
-          </div>
-          <div>
-            <Tabs defaultValue="list" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list">Danh sách</TabsTrigger>
-                <TabsTrigger value="calendar">Lịch</TabsTrigger>
-              </TabsList>
-              <TabsContent value="list" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Lịch hẹn của tôi</CardTitle>
-                    <CardDescription>
-                      {filteredAppointments.length} lịch hẹn{" "}
-                      {filter !== "all" ? `(${filter})` : ""}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((appointment) => (
-                          <div
-                            key={appointment.id}
-                            className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-lg border p-4"
-                          >
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Scissors className="h-4 w-4 text-gray-500" />
-                                <p className="font-medium">
-                                  {appointment.service}
-                                </p>
-                                <span
-                                  className={cn(
-                                    "ml-2 rounded-full px-2 py-0.5 text-xs",
-                                    appointment.status === "completed" &&
-                                      "bg-green-100 text-green-700",
-                                    appointment.status === "upcoming" &&
-                                      "bg-blue-100 text-blue-700",
-                                    appointment.status === "cancelled" &&
-                                      "bg-red-100 text-red-700"
-                                  )}
-                                >
-                                  {appointment.status === "completed" &&
-                                    "Hoàn thành"}
-                                  {appointment.status === "upcoming" &&
-                                    "Sắp tới"}
-                                  {appointment.status === "cancelled" &&
-                                    "Đã hủy"}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <User className="h-4 w-4" />
-                                  <span>{appointment.stylist}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="h-4 w-4" />
-                                  <span>
-                                    {format(appointment.date, "dd/MM/yyyy")}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4" />
-                                  <span>{appointment.time}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 self-end md:self-center">
-                              {appointment.status === "upcoming" && (
-                                <>
-                                  <Button variant="outline" size="sm" asChild>
-                                    <Link
-                                      href={`/booking/edit/${appointment.id}`}
-                                    >
-                                      Chỉnh sửa
-                                    </Link>
-                                  </Button>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button variant="destructive" size="sm">
-                                        Hủy
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>
-                                          Xác nhận hủy lịch
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                          Bạn có chắc chắn muốn hủy lịch đặt này
-                                          không? Hành động này không thể hoàn
-                                          tác.
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <DialogFooter>
-                                        <Button variant="outline">
-                                          Không, giữ lịch
-                                        </Button>
-                                        <Button variant="destructive">
-                                          Có, hủy lịch
-                                        </Button>
-                                      </DialogFooter>
-                                    </DialogContent>
-                                  </Dialog>
-                                </>
-                              )}
-                              {appointment.status === "completed" && (
-                                <Button variant="outline" size="sm">
-                                  Đặt lại
-                                </Button>
-                              )}
-                              <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/appointments/${appointment.id}`}>
-                                  Chi tiết
-                                </Link>
-                              </Button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500">Không có lịch hẹn nào</p>
-                          <Button className="mt-4" asChild>
-                            <Link href="/booking">Đặt lịch ngay</Link>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="calendar" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>
-                        Lịch tháng {format(date || new Date(), "MM/yyyy")}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon">
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon">
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-7 gap-2 text-center text-sm font-medium">
-                      {["CN", "T2", "T3", "T4", "T5", "T6", "T7"].map(
-                        (day, i) => (
-                          <div key={i} className="py-2">
-                            {day}
-                          </div>
-                        )
-                      )}
-                    </div>
-                    <div className="grid grid-cols-7 gap-2">
-                      {Array.from({ length: 35 }).map((_, i) => {
-                        const day = i + 1;
-                        const hasAppointment = appointments.some(
-                          (app) =>
-                            app.date.getDate() === day &&
-                            app.date.getMonth() ===
-                              (date || new Date()).getMonth()
-                        );
-                        const appointment = appointments.find(
-                          (app) =>
-                            app.date.getDate() === day &&
-                            app.date.getMonth() ===
-                              (date || new Date()).getMonth()
-                        );
-                        return (
-                          <div
-                            key={i}
-                            className={cn(
-                              "aspect-square flex flex-col items-center justify-center rounded-md border p-2",
-                              hasAppointment &&
-                                appointment?.status === "upcoming" &&
-                                "border-blue-500 bg-blue-50",
-                              hasAppointment &&
-                                appointment?.status === "completed" &&
-                                "border-green-500 bg-green-50",
-                              hasAppointment &&
-                                appointment?.status === "cancelled" &&
-                                "border-red-500 bg-red-50"
-                            )}
-                          >
-                            <span className="text-sm">{day}</span>
-                            {hasAppointment && (
-                              <div
-                                className={cn(
-                                  "mt-1 h-1 w-1 rounded-full",
-                                  appointment?.status === "upcoming" &&
-                                    "bg-blue-500",
-                                  appointment?.status === "completed" &&
-                                    "bg-green-500",
-                                  appointment?.status === "cancelled" &&
-                                    "bg-red-500"
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Lịch sử dịch vụ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      {serviceHistoryTable
+                        .getHeaderGroups()
+                        .map((headerGroup) => (
+                          <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                              <th
+                                key={header.id}
+                                className="px-4 py-2 text-left"
+                              >
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
                                 )}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </div>
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                    </thead>
+                    <tbody>
+                      {serviceHistoryTable.getRowModel().rows.map((row) => (
+                        <tr key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <td key={cell.id} className="px-4 py-2">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

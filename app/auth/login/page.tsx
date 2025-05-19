@@ -40,6 +40,7 @@ export default function LoginPage() {
         localStorage.setItem(
           "user",
           JSON.stringify({
+            user: response.data,
             access_token: response?.data?.accessToken,
           })
         );

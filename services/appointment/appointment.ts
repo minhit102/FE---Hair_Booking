@@ -8,17 +8,24 @@ interface AppointmentData {
   notes?: string;
   username?: string;
 }
+
+export const statusAppointment = {
+  ALL: "all",
+  ACCEPTED: "accepted",
+  CANCELLED: "cancelled",
+  UPCOMING: "upcoming",
+};
+
 export const createAppointment = async (data: AppointmentData) => {
   const response = await api.post("/appointments", data);
   return response;
 };
 
-export const getAppointments = async () => {
-  try {
-    const response = await api.get("/appointments");
-    return response.data;
-  } catch (error) {
-    console.error("Get appointments error:", error);
-    throw error;
-  }
+export const getAppointments = async ({ status }: { status: string }) => {
+  const response = await api.get("/appointments", {
+    params: {
+      status: status,
+    },
+  });
+  return response;
 };
