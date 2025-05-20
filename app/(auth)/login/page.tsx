@@ -144,7 +144,7 @@ export default function LoginPage() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 mt-[1cm] ">
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
