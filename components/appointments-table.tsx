@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -27,118 +27,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, MoreHorizontal, Search, X } from "lucide-react";
+import {
+  Check,
+  MoreHorizontal,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  getAppointments,
+  updateAppointmentStatus,
+} from "@/lib/api/appointment";
 
-const appointments = [
-  {
-    id: 1,
-    username: "Nguyễn Văn A",
-    phone: "0901234567",
-    date: "07/05/2023",
-    time: "10:00",
-    service: "Cắt tóc nam",
-    staff: "Minh",
-    status: "accepted",
-    notes: "Cắt phòng VIP",
-  },
-  {
-    id: 2,
-    username: "Trần Thị B",
-    phone: "0901234568",
-    date: "07/05/2023",
-    time: "11:30",
-    service: "Nhuộm tóc",
-    staff: "Hương",
-    status: "accepted",
-    notes: "Cắt phòng LUX",
-  },
-  {
-    id: 3,
-    username: "Lê Văn C",
-    phone: "0901234569",
-    date: "07/05/2023",
-    time: "13:00",
-    service: "Uốn tóc",
-    staff: "Tâm",
-    status: "accepted",
-    notes: "Uốn phòng LUX",
-  },
-  {
-    id: 4,
-    username: "Phạm Thị D",
-    phone: "0901234570",
-    date: "07/05/2023",
-    time: "15:30",
-    service: "Gội đầu",
-    staff: "Hà",
-    status: "accepted",
-    notes: "Gội phòng LUX",
-  },
-  {
-    id: 5,
-    username: "Hoàng Văn E",
-    phone: "0901234571",
-    date: "08/05/2023",
-    time: "09:00",
-    service: "Cắt tóc nam",
-    staff: "Minh",
-    status: "cancelled",
-    notes: "Cắt phòng VIP",
-  },
-  {
-    id: 6,
-    username: "Đỗ Thị F",
-    phone: "0901234572",
-    date: "08/05/2023",
-    time: "10:30",
-    service: "Nhuộm tóc",
-    staff: "Hương",
-    status: "accepted",
-    notes: "Nhuộm phòng LUX",
-  },
-  {
-    id: 7,
-    username: "Vũ Văn G",
-    phone: "0901234573",
-    date: "08/05/2023",
-    time: "14:00",
-    service: "Cắt tóc nữ",
-    staff: "Tâm",
-    status: "accepted",
-    notes: "Cắt phòng VIP",
-  },
-  {
-    id: 8,
-    username: "Ngô Thị H",
-    phone: "0901234574",
-    date: "08/05/2023",
-    time: "16:00",
-    service: "Gội đầu",
-    staff: "Hà",
-    status: "accepted",
-    notes: "",
-  },
-];
+// Define types for our data
+interface Appointment {
+  id: string;
+  username: string;
+  phone: string;
+  date: string;
+  time: string;
+  service: string;
+  staff: string;
+  status: string;
+  notes: string;
+}
+
+interface PaginatedResponse {
+  appointments: Appointment[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
 
 export function AppointmentsTable() {
+  // State for search and filters
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [staffFilter, setStaffFilter] = useState("all");
 
-  const filteredAppointments = appointments.filter((appointment) => {
-    const matchesSearch =
-      appointment.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      appointment.phone.includes(searchTerm);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 5;
 
-    const matchesStatus =
-      statusFilter === "all" || appointment.status === statusFilter;
+  // Data state
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const matchesStaff =
-      staffFilter === "all" || appointment.staff === staffFilter;
+  // Function to fetch appointments from API
+  const fetchAppointments = async () => {
+    try {
+      setIsLoading(true);
 
-    return matchesSearch && matchesStatus && matchesStaff;
-  });
+      const response = await getAppointments({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm,
+        status: statusFilter,
+      });
+      const data: PaginatedResponse = response?.data;
+      setAppointments(data?.appointments || []);
+      setTotalPages(data?.totalPages || 1);
+      setTotalItems(data?.total || 0);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      toast.error("Không thể tải danh sách lịch hẹn");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Fetch appointments when filters or page changes
+  useEffect(() => {
+    fetchAppointments();
+  }, [currentPage, searchTerm, statusFilter]);
+
+  // Function to handle status update
+  const handleStatusUpdate = async (
+    appointmentId: string,
+    newStatus: string
+  ) => {
+    try {
+      const response = await updateAppointmentStatus(appointmentId, newStatus);
+
+      toast.success("Hủy lịch hẹn thành công");
+      fetchAppointments(); // Refresh the list
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      toast.error("Không thể cập nhật trạng thái");
+    }
+  };
+
+  // Function to get status badge with appropriate styling
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
@@ -175,7 +158,7 @@ export function AppointmentsTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+              <SelectItem value="accepted">Đã xác nhận</SelectItem>
               {/* <SelectItem value="pending">Chờ xác nhận</SelectItem> */}
               <SelectItem value="cancelled">Đã hủy</SelectItem>
               {/* <SelectItem value="completed">Hoàn thành</SelectItem> */}
@@ -198,14 +181,20 @@ export function AppointmentsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAppointments.length === 0 ? (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
+                  Đang tải...
+                </TableCell>
+              </TableRow>
+            ) : appointments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
                   Không tìm thấy lịch hẹn nào
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAppointments.map((appointment) => (
+              appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell>
                     <div className="font-medium">{appointment.username}</div>
@@ -235,11 +224,21 @@ export function AppointmentsTable() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        {/* <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusUpdate(appointment.id, "accepted")
+                          }
+                          disabled={appointment.status === "accepted"}
+                        >
                           <Check className="mr-2 h-4 w-4" />
                           Xác nhận
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        </DropdownMenuItem> */}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusUpdate(appointment.id, "cancelled")
+                          }
+                          disabled={appointment.status === "cancelled"}
+                        >
                           <X className="mr-2 h-4 w-4" />
                           Hủy lịch
                         </DropdownMenuItem>
@@ -253,6 +252,37 @@ export function AppointmentsTable() {
           </TableBody>
         </Table>
       </div>
+
+      {!isLoading && appointments.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, totalItems)} của {totalItems}{" "}
+            lịch hẹn
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm">
+              Trang {currentPage} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages || isLoading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

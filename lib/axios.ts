@@ -11,10 +11,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("salon-auth");
-      console.log("token", token);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const user = localStorage.getItem("salon-auth");
+      const parsedToken = user ? JSON.parse(user) : null;
+      if (parsedToken) {
+        config.headers.Authorization = `Bearer ${parsedToken.token}`;
       }
     }
     return config;

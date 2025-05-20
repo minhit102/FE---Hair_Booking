@@ -16,10 +16,10 @@ export default function AppointmentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Lịch hẹn</h1>
         <div className="flex items-center gap-2">
-          <Button>
+          {/* <Button>
             <Plus className="mr-2 h-4 w-4" />
             Thêm lịch hẹn
-          </Button>
+          </Button> */}
         </div>
       </div>
 
