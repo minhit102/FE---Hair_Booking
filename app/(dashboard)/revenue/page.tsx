@@ -33,7 +33,7 @@ export default function RevenuePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Doanh thu hôm nay
+              Lịch hẹn hôm nay
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -45,7 +45,7 @@ export default function RevenuePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Doanh thu tuần này
+              Doanh thu hôm nay
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -59,13 +59,13 @@ export default function RevenuePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Doanh thu tháng này
+              Doanh thu 7 ngày gần nhất
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">98.750.000 ₫</div>
             <p className="text-xs text-muted-foreground">
-              +12% so với tháng trước
+              +12% so 7 ngày trước đó
             </p>
           </CardContent>
         </Card>
@@ -73,7 +73,7 @@ export default function RevenuePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Doanh thu theo thời gian</CardTitle>
+          <CardTitle>Doanh thu 30 ngày gần nhất</CardTitle>
           <CardDescription>
             Biểu đồ doanh thu theo ngày trong tháng
           </CardDescription>

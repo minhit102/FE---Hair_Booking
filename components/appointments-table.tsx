@@ -32,83 +32,91 @@ import { Check, MoreHorizontal, Search, X } from "lucide-react";
 const appointments = [
   {
     id: 1,
-    customer: "Nguyễn Văn A",
+    username: "Nguyễn Văn A",
     phone: "0901234567",
     date: "07/05/2023",
     time: "10:00",
     service: "Cắt tóc nam",
     staff: "Minh",
-    status: "confirmed",
+    status: "accepted",
+    notes: "Cắt phòng VIP",
   },
   {
     id: 2,
-    customer: "Trần Thị B",
+    username: "Trần Thị B",
     phone: "0901234568",
     date: "07/05/2023",
     time: "11:30",
     service: "Nhuộm tóc",
     staff: "Hương",
-    status: "pending",
+    status: "accepted",
+    notes: "Cắt phòng LUX",
   },
   {
     id: 3,
-    customer: "Lê Văn C",
+    username: "Lê Văn C",
     phone: "0901234569",
     date: "07/05/2023",
     time: "13:00",
     service: "Uốn tóc",
     staff: "Tâm",
-    status: "confirmed",
+    status: "accepted",
+    notes: "Uốn phòng LUX",
   },
   {
     id: 4,
-    customer: "Phạm Thị D",
+    username: "Phạm Thị D",
     phone: "0901234570",
     date: "07/05/2023",
     time: "15:30",
     service: "Gội đầu",
     staff: "Hà",
-    status: "confirmed",
+    status: "accepted",
+    notes: "Gội phòng LUX",
   },
   {
     id: 5,
-    customer: "Hoàng Văn E",
+    username: "Hoàng Văn E",
     phone: "0901234571",
     date: "08/05/2023",
     time: "09:00",
     service: "Cắt tóc nam",
     staff: "Minh",
     status: "cancelled",
+    notes: "Cắt phòng VIP",
   },
   {
     id: 6,
-    customer: "Đỗ Thị F",
+    username: "Đỗ Thị F",
     phone: "0901234572",
     date: "08/05/2023",
     time: "10:30",
     service: "Nhuộm tóc",
     staff: "Hương",
-    status: "completed",
+    status: "accepted",
+    notes: "Nhuộm phòng LUX",
   },
   {
     id: 7,
-    customer: "Vũ Văn G",
+    username: "Vũ Văn G",
     phone: "0901234573",
     date: "08/05/2023",
     time: "14:00",
     service: "Cắt tóc nữ",
     staff: "Tâm",
-    status: "confirmed",
+    status: "accepted",
+    notes: "Cắt phòng VIP",
   },
   {
     id: 8,
-    customer: "Ngô Thị H",
+    username: "Ngô Thị H",
     phone: "0901234574",
     date: "08/05/2023",
     time: "16:00",
     service: "Gội đầu",
     staff: "Hà",
-    status: "pending",
+    status: "accepted",
+    notes: "",
   },
 ];
 
@@ -119,7 +127,7 @@ export function AppointmentsTable() {
 
   const filteredAppointments = appointments.filter((appointment) => {
     const matchesSearch =
-      appointment.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      appointment.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.phone.includes(searchTerm);
 
     const matchesStatus =
@@ -131,16 +139,14 @@ export function AppointmentsTable() {
     return matchesSearch && matchesStatus && matchesStaff;
   });
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case "confirmed":
+      case "accepted":
         return <Badge>Đã xác nhận</Badge>;
-      case "pending":
-        return <Badge variant="outline">Chờ xác nhận</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Đã hủy</Badge>;
-      case "completed":
-        return <Badge variant="secondary">Hoàn thành</Badge>;
+      // case "completed":
+      //   return <Badge variant="secondary">Hoàn thành</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -170,22 +176,9 @@ export function AppointmentsTable() {
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-              <SelectItem value="pending">Chờ xác nhận</SelectItem>
+              {/* <SelectItem value="pending">Chờ xác nhận</SelectItem> */}
               <SelectItem value="cancelled">Đã hủy</SelectItem>
-              <SelectItem value="completed">Hoàn thành</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={staffFilter} onValueChange={setStaffFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Nhân viên" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả nhân viên</SelectItem>
-              <SelectItem value="Minh">Minh</SelectItem>
-              <SelectItem value="Hương">Hương</SelectItem>
-              <SelectItem value="Tâm">Tâm</SelectItem>
-              <SelectItem value="Hà">Hà</SelectItem>
+              {/* <SelectItem value="completed">Hoàn thành</SelectItem> */}
             </SelectContent>
           </Select>
         </div>
@@ -200,6 +193,7 @@ export function AppointmentsTable() {
               <TableHead>Dịch vụ</TableHead>
               <TableHead>Nhân viên</TableHead>
               <TableHead>Trạng thái</TableHead>
+              <TableHead>Notes</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
@@ -214,11 +208,12 @@ export function AppointmentsTable() {
               filteredAppointments.map((appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell>
-                    <div className="font-medium">{appointment.customer}</div>
+                    <div className="font-medium">{appointment.username}</div>
                     <div className="text-sm text-muted-foreground">
                       {appointment.phone}
                     </div>
                   </TableCell>
+
                   <TableCell>
                     <div>{appointment.date}</div>
                     <div className="text-sm text-muted-foreground">
@@ -228,6 +223,7 @@ export function AppointmentsTable() {
                   <TableCell>{appointment.service}</TableCell>
                   <TableCell>{appointment.staff}</TableCell>
                   <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                  <TableCell>{appointment.notes}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -248,8 +244,6 @@ export function AppointmentsTable() {
                           Hủy lịch
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Chỉnh sửa</DropdownMenuItem>
-                        <DropdownMenuItem>Xem chi tiết</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

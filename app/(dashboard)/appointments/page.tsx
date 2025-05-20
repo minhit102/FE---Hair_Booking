@@ -26,16 +26,16 @@ export default function AppointmentsPage() {
       <Tabs defaultValue="list">
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="list">Danh sách</TabsTrigger>
-            <TabsTrigger value="calendar">Lịch</TabsTrigger>
+            {/* <TabsTrigger value="list">Danh sách</TabsTrigger> */}
+            {/* <TabsTrigger value="calendar">Lịch</TabsTrigger> */}
           </TabsList>
 
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
               <Calendar className="mr-2 h-4 w-4" />
               Hôm nay
             </Button>
-          </div>
+          </div> */}
         </div>
 
         <TabsContent value="list" className="mt-4">
@@ -50,14 +50,14 @@ export default function AppointmentsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-4">
+        {/* <TabsContent value="calendar" className="mt-4">
           <Card>
             <CardHeader>
               <CardTitle>Lịch hẹn theo ngày</CardTitle>
               <CardDescription>Xem lịch hẹn theo dạng lịch</CardDescription>
             </CardHeader>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   );
