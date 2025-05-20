@@ -11,6 +11,26 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAppointments } from "@/services/appointment/appointment";
+import api from "@/lib/axios";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Appointment = {
   id: number;
@@ -43,6 +63,39 @@ export default function AppointmentsPage() {
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<
+    string | null
+  >(null);
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      await api.patch(`/appointments/${appointmentId}`, {
+        status: "cancelled",
+      });
+      toast.success("Hủy lịch thành công");
+      // Refresh appointments data
+      const appointmentsResponse = await getAppointments();
+      const updatedAppointments = appointmentsResponse.map(
+        (appointment: any, index: number) => ({
+          id: index + 1,
+          _id: appointment._id,
+          service: appointment.service,
+          date: new Date(appointment.date).toLocaleString("vi-VN"),
+          username: appointment.username,
+          branch: appointment.branch,
+          phone: appointment.phone,
+          notes: appointment.notes,
+          status: appointment.status,
+        })
+      );
+      setAppointmentsData(updatedAppointments);
+      setShowCancelDialog(false);
+      setSelectedAppointmentId(null);
+    } catch (error) {
+      toast.error("Không thể hủy lịch. Vui lòng thử lại sau.");
+    }
+  };
 
   // Hàm tạo dữ liệu giả cho historyResponse
   const getFakeHistoryData = (): ServiceHistory[] => [
@@ -140,35 +193,39 @@ export default function AppointmentsPage() {
           const status = info.getValue();
           const isAccepted = status === "accepted";
           const appointmentDate = new Date(info.row.original.date);
-          const isFuture = appointmentDate > new Date();
 
           return (
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                isAccepted
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {isAccepted ? (
-                <div className="flex items-center gap-2">
-                  <span>Xác nhận</span>
-                  {isFuture && (
-                    <button
-                      onClick={() =>
-                        // handleCancelAppointment(info.row.original.id)
-                        console.log(info.row.original._id)
-                      }
-                      className="text-red-600 hover:text-red-800 text-xs underline"
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  isAccepted
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {isAccepted ? "Xác nhận" : "Đã hủy"}
+              </span>
+              {isAccepted && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedAppointmentId(info.row.original._id);
+                        setShowCancelDialog(true);
+                      }}
+                      className="text-red-600"
                     >
                       Hủy lịch
-                    </button>
-                  )}
-                </div>
-              ) : (
-                "Đã hủy"
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-            </span>
+            </div>
           );
         },
       }),
@@ -342,6 +399,29 @@ export default function AppointmentsPage() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận hủy lịch</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn hủy lịch hẹn này không?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Không</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                selectedAppointmentId &&
+                handleCancelAppointment(selectedAppointmentId)
+              }
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Có, hủy lịch
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
