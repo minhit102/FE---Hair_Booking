@@ -10,7 +10,10 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAppointments } from "@/services/appointment/appointment";
+import {
+  cancelAppointment,
+  getAppointments,
+} from "@/services/appointment/appointment";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
@@ -19,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Star, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -32,6 +35,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getInvoicesListByUser } from "@/services/invoices/invoice.api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 type Appointment = {
   id: number;
@@ -53,9 +65,12 @@ type ServiceHistory = {
   total: string;
   phone: string;
   branchId: string;
+  branch: string;
   username: string;
   stylistId: string;
   serviceId: string;
+  rating?: number;
+  review?: string;
 };
 
 export default function AppointmentsPage() {
@@ -73,12 +88,17 @@ export default function AppointmentsPage() {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
     string | null
   >(null);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceHistory | null>(
+    null
+  );
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
 
   const handleCancelAppointment = async (appointmentId: string) => {
     try {
-      await api.patch(`/appointments/${appointmentId}`, {
-        status: "cancelled",
-      });
+      await cancelAppointment(appointmentId);
       toast.success("Hủy lịch thành công");
       // Refresh appointments data
       const appointmentsResponse = await getAppointments();
@@ -111,12 +131,13 @@ export default function AppointmentsPage() {
       return invoicesResponse.map((invoice: any, index: number) => ({
         id: index + 1,
         _id: invoice._id,
-        date: invoice.date,
+        date: new Date(invoice.date).toLocaleString("vi-VN"),
         service: invoice.service,
         stylist: invoice.stylist,
         total: invoice.total,
         phone: invoice.phone,
         branchId: invoice.branchId,
+        branch: invoice.branch,
         username: invoice.username,
         stylistId: invoice.stylistId,
         serviceId: invoice.serviceId,
@@ -235,9 +256,45 @@ export default function AppointmentsPage() {
     () => [
       historyColumnHelper.accessor("id", { header: "STT" }),
       historyColumnHelper.accessor("service", { header: "Dịch vụ" }),
+      historyColumnHelper.accessor("branch", { header: "Chi nhánh" }),
       historyColumnHelper.accessor("stylist", { header: "Tên thợ cắt tóc" }),
       historyColumnHelper.accessor("date", { header: "Ngày cắt tóc" }),
       historyColumnHelper.accessor("total", { header: "Tổng tiền" }),
+      historyColumnHelper.display({
+        id: "actions",
+        header: "Thêm đánh giá",
+        cell: (info) => {
+          const service = info.row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedService(service);
+                  setShowDetailsDialog(true);
+                }}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Chi tiết
+              </Button>
+              {!service.rating && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedService(service);
+                    setShowRatingDialog(true);
+                  }}
+                >
+                  <Star className="h-4 w-4 mr-1" />
+                  Đánh giá
+                </Button>
+              )}
+            </div>
+          );
+        },
+      }),
     ],
     []
   );
@@ -253,6 +310,19 @@ export default function AppointmentsPage() {
     columns: serviceHistoryColumns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const handleRating = async () => {
+    if (!selectedService) return;
+    try {
+      // TODO: Implement rating API call
+      toast.success("Cảm ơn bạn đã đánh giá!");
+      setShowRatingDialog(false);
+      setRating(0);
+      setReview("");
+    } catch (error) {
+      toast.error("Không thể gửi đánh giá. Vui lòng thử lại sau.");
+    }
+  };
 
   if (isLoading) {
     return <div className="container py-12">Đang tải...</div>;
@@ -431,6 +501,123 @@ export default function AppointmentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rating Dialog */}
+      <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đánh giá dịch vụ</DialogTitle>
+            <DialogDescription>
+              Chia sẻ trải nghiệm của bạn về dịch vụ này
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className="focus:outline-none"
+                >
+                  <Star
+                    className={`h-6 w-6 ${
+                      star <= rating
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              placeholder="Nhập đánh giá của bạn..."
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRatingDialog(false);
+                  setRating(0);
+                  setReview("");
+                }}
+              >
+                Hủy
+              </Button>
+              <Button onClick={handleRating}>Gửi đánh giá</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chi tiết dịch vụ</DialogTitle>
+          </DialogHeader>
+          {selectedService && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Dịch vụ</p>
+                  <p className="mt-1">{selectedService.service}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    Thợ cắt tóc
+                  </p>
+                  <p className="mt-1">{selectedService.stylist}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    Ngày thực hiện
+                  </p>
+                  <p className="mt-1">{selectedService.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Tổng tiền</p>
+                  <p className="mt-1">{selectedService.total}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Chi nhánh</p>
+                  <p className="mt-1">{selectedService.branchId}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    Số điện thoại
+                  </p>
+                  <p className="mt-1">{selectedService.phone}</p>
+                </div>
+              </div>
+              {selectedService.rating && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-500">Đánh giá</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= selectedService.rating!
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {selectedService.review && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      {selectedService.review}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -25,3 +25,8 @@ export const getAppointments = async () => {
   const response = await api.get("/appointments");
   return response.data;
 };
+
+export const cancelAppointment = async (appointmentId: string) => {
+  const response = await api.put(`/appointments/${appointmentId}/cancel`);
+  return response.data;
+};
