@@ -10,7 +10,10 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAppointments } from "@/services/appointment/appointment";
+import {
+  cancelAppointment,
+  getAppointments,
+} from "@/services/appointment/appointment";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import {
@@ -76,9 +79,7 @@ export default function AppointmentsPage() {
 
   const handleCancelAppointment = async (appointmentId: string) => {
     try {
-      await api.patch(`/appointments/${appointmentId}`, {
-        status: "cancelled",
-      });
+      await cancelAppointment(appointmentId);
       toast.success("Hủy lịch thành công");
       // Refresh appointments data
       const appointmentsResponse = await getAppointments();
@@ -111,7 +112,7 @@ export default function AppointmentsPage() {
       return invoicesResponse.map((invoice: any, index: number) => ({
         id: index + 1,
         _id: invoice._id,
-        date: invoice.date,
+        date: new Date(invoice.date).toLocaleString("vi-VN"),
         service: invoice.service,
         stylist: invoice.stylist,
         total: invoice.total,
