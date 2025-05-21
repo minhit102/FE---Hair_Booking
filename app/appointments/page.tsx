@@ -393,20 +393,28 @@ export default function AppointmentsPage() {
 
   return (
     <div className="container py-12">
-      <div className="flex mb-6 border-b">
+      <div className="flex mb-8 border-b">
         <a
           href="?tab=appointments"
           onClick={(e) => {
             e.preventDefault();
             handleTabChange("appointments");
           }}
-          className={`px-6 py-3 font-medium text-lg cursor-pointer ${
+          className={`px-6 py-3 font-medium text-lg cursor-pointer relative ${
             activeTab === "appointments"
-              ? "border-b-2 border-blue-500 text-blue-600"
+              ? "text-blue-600"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
           Lịch hẹn
+          {activeTab === "appointments" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+              initial={false}
+              transition={{ type: "spring", duration: 0.5 }}
+            />
+          )}
         </a>
         <a
           href="?tab=history"
@@ -414,13 +422,21 @@ export default function AppointmentsPage() {
             e.preventDefault();
             handleTabChange("history");
           }}
-          className={`px-6 py-3 font-medium text-lg cursor-pointer ${
+          className={`px-6 py-3 font-medium text-lg cursor-pointer relative ${
             activeTab === "history"
-              ? "border-b-2 border-blue-500 text-blue-600"
+              ? "text-blue-600"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          Lịch sử dịch vụ
+          Lịch sử
+          {activeTab === "history" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+              initial={false}
+              transition={{ type: "spring", duration: 0.5 }}
+            />
+          )}
         </a>
       </div>
 
@@ -433,12 +449,9 @@ export default function AppointmentsPage() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === "appointments" ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Lịch hẹn</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-lg border">
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto rounded-lg">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       {appointmentsTable
@@ -448,7 +461,7 @@ export default function AppointmentsPage() {
                             {headerGroup.headers.map((header) => (
                               <th
                                 key={header.id}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
                               >
                                 {flexRender(
                                   header.column.columnDef.header,
@@ -463,12 +476,12 @@ export default function AppointmentsPage() {
                       {appointmentsTable.getRowModel().rows.map((row) => (
                         <tr
                           key={row.id}
-                          className="hover:bg-gray-50 transition-colors"
+                          className="hover:bg-gray-50/50 transition-colors"
                         >
                           {row.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
-                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -484,12 +497,9 @@ export default function AppointmentsPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Lịch sử dịch vụ</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-lg border">
+            <Card className="shadow-lg border-0">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto rounded-lg">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       {serviceHistoryTable
@@ -499,7 +509,7 @@ export default function AppointmentsPage() {
                             {headerGroup.headers.map((header) => (
                               <th
                                 key={header.id}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
                               >
                                 {flexRender(
                                   header.column.columnDef.header,
@@ -514,12 +524,12 @@ export default function AppointmentsPage() {
                       {serviceHistoryTable.getRowModel().rows.map((row) => (
                         <tr
                           key={row.id}
-                          className="hover:bg-gray-50 transition-colors"
+                          className="hover:bg-gray-50/50 transition-colors"
                         >
                           {row.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
-                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-600"
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
