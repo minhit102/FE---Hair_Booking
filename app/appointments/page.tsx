@@ -44,6 +44,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { createReview, updateReview } from "@/services/review/review.api";
 
 type Appointment = {
   id: number;
@@ -59,6 +60,7 @@ type Appointment = {
 
 type ServiceHistory = {
   id: string;
+  _id: string;
   date: string;
   service: string;
   stylist: string;
@@ -71,6 +73,7 @@ type ServiceHistory = {
   serviceId: string;
   rating?: number;
   review?: string;
+  reviewId?: string;
 };
 
 export default function AppointmentsPage() {
@@ -95,6 +98,7 @@ export default function AppointmentsPage() {
   );
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleCancelAppointment = async (appointmentId: string) => {
     try {
@@ -130,7 +134,7 @@ export default function AppointmentsPage() {
       console.log(invoicesResponse);
       return invoicesResponse.map((invoice: any, index: number) => ({
         id: index + 1,
-        _id: invoice._id,
+        _id: invoice.id,
         date: new Date(invoice.date).toLocaleString("vi-VN"),
         service: invoice.service,
         stylist: invoice.stylist,
@@ -141,6 +145,9 @@ export default function AppointmentsPage() {
         username: invoice.username,
         stylistId: invoice.stylistId,
         serviceId: invoice.serviceId,
+        reviewId: invoice.reviewId,
+        rating: invoice.rating,
+        review: invoice.review,
       }));
     } catch (error) {
       console.error("Get fake history data error:", error);
@@ -262,30 +269,38 @@ export default function AppointmentsPage() {
       historyColumnHelper.accessor("total", { header: "Tổng tiền" }),
       historyColumnHelper.display({
         id: "actions",
-        header: "Thêm đánh giá",
+        header: "Đánh giá",
         cell: (info) => {
           const service = info.row.original;
           return (
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedService(service);
-                  setShowDetailsDialog(true);
-                }}
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Chi tiết
-              </Button>
-              {!service.rating && (
+              {service.rating ? (
+                <div className="flex items-center gap-1">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= service.rating!
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openRatingDialog(service)}
+                  >
+                    Sửa
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setSelectedService(service);
-                    setShowRatingDialog(true);
-                  }}
+                  onClick={() => openRatingDialog(service)}
                 >
                   <Star className="h-4 w-4 mr-1" />
                   Đánh giá
@@ -314,14 +329,58 @@ export default function AppointmentsPage() {
   const handleRating = async () => {
     if (!selectedService) return;
     try {
-      // TODO: Implement rating API call
-      toast.success("Cảm ơn bạn đã đánh giá!");
+      if (isEditing) {
+        if (!selectedService.reviewId) {
+          toast.error("Không tìm thấy đánh giá để cập nhật");
+          return;
+        }
+        await updateReview({
+          rating,
+          review,
+          reviewId: selectedService.reviewId,
+        });
+        toast.success("Cập nhật đánh giá thành công!");
+      } else {
+        // Thêm đánh giá mới
+        console.log(
+          "==========================================",
+          selectedService
+        );
+        await createReview({
+          rating,
+          review,
+          invoiceId: selectedService._id,
+        });
+        toast.success("Cảm ơn bạn đã đánh giá!");
+      }
+
+      // Refresh data
+      const history = await getDataHistory();
+      setServiceHistoryData(history);
+
       setShowRatingDialog(false);
       setRating(0);
       setReview("");
+      setIsEditing(false);
     } catch (error) {
       toast.error("Không thể gửi đánh giá. Vui lòng thử lại sau.");
     }
+  };
+
+  const openRatingDialog = (service: ServiceHistory) => {
+    setSelectedService(service);
+    if (service.rating) {
+      // Nếu đã có đánh giá, set giá trị hiện tại
+      setRating(service.rating);
+      setReview(service.review || "");
+      setIsEditing(true);
+    } else {
+      // Nếu chưa có đánh giá, reset form
+      setRating(0);
+      setReview("");
+      setIsEditing(false);
+    }
+    setShowRatingDialog(true);
   };
 
   if (isLoading) {
@@ -506,9 +565,13 @@ export default function AppointmentsPage() {
       <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Đánh giá dịch vụ</DialogTitle>
+            <DialogTitle>
+              {isEditing ? "Sửa đánh giá" : "Đánh giá dịch vụ"}
+            </DialogTitle>
             <DialogDescription>
-              Chia sẻ trải nghiệm của bạn về dịch vụ này
+              {isEditing
+                ? "Cập nhật đánh giá của bạn về dịch vụ này"
+                : "Chia sẻ trải nghiệm của bạn về dịch vụ này"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -542,11 +605,14 @@ export default function AppointmentsPage() {
                   setShowRatingDialog(false);
                   setRating(0);
                   setReview("");
+                  setIsEditing(false);
                 }}
               >
                 Hủy
               </Button>
-              <Button onClick={handleRating}>Gửi đánh giá</Button>
+              <Button onClick={handleRating}>
+                {isEditing ? "Cập nhật" : "Gửi đánh giá"}
+              </Button>
             </div>
           </div>
         </DialogContent>
