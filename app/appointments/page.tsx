@@ -234,9 +234,9 @@ export default function AppointmentsPage() {
   const serviceHistoryColumns = useMemo(
     () => [
       historyColumnHelper.accessor("id", { header: "STT" }),
-      historyColumnHelper.accessor("date", { header: "Ngày cắt tóc" }),
       historyColumnHelper.accessor("service", { header: "Dịch vụ" }),
       historyColumnHelper.accessor("stylist", { header: "Tên thợ cắt tóc" }),
+      historyColumnHelper.accessor("date", { header: "Ngày cắt tóc" }),
       historyColumnHelper.accessor("total", { header: "Tổng tiền" }),
     ],
     []
@@ -309,9 +309,9 @@ export default function AppointmentsPage() {
                 <CardTitle>Lịch hẹn</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                       {appointmentsTable
                         .getHeaderGroups()
                         .map((headerGroup) => (
@@ -319,7 +319,7 @@ export default function AppointmentsPage() {
                             {headerGroup.headers.map((header) => (
                               <th
                                 key={header.id}
-                                className="px-4 py-2 text-left"
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                               >
                                 {flexRender(
                                   header.column.columnDef.header,
@@ -330,11 +330,17 @@ export default function AppointmentsPage() {
                           </tr>
                         ))}
                     </thead>
-                    <tbody>
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {appointmentsTable.getRowModel().rows.map((row) => (
-                        <tr key={row.id}>
+                        <tr
+                          key={row.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
                           {row.getVisibleCells().map((cell) => (
-                            <td key={cell.id} className="px-4 py-2">
+                            <td
+                              key={cell.id}
+                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                            >
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext()
@@ -354,9 +360,9 @@ export default function AppointmentsPage() {
                 <CardTitle>Lịch sử dịch vụ</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                       {serviceHistoryTable
                         .getHeaderGroups()
                         .map((headerGroup) => (
@@ -364,7 +370,7 @@ export default function AppointmentsPage() {
                             {headerGroup.headers.map((header) => (
                               <th
                                 key={header.id}
-                                className="px-4 py-2 text-left"
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                               >
                                 {flexRender(
                                   header.column.columnDef.header,
@@ -375,11 +381,17 @@ export default function AppointmentsPage() {
                           </tr>
                         ))}
                     </thead>
-                    <tbody>
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {serviceHistoryTable.getRowModel().rows.map((row) => (
-                        <tr key={row.id}>
+                        <tr
+                          key={row.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
                           {row.getVisibleCells().map((cell) => (
-                            <td key={cell.id} className="px-4 py-2">
+                            <td
+                              key={cell.id}
+                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                            >
                               {flexRender(
                                 cell.column.columnDef.cell,
                                 cell.getContext()
