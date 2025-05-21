@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getInvoicesListByUser } from "@/services/invoices/invoice.api";
 
 type Appointment = {
   id: number;
@@ -50,6 +51,11 @@ type ServiceHistory = {
   service: string;
   stylist: string;
   total: string;
+  phone: string;
+  branchId: string;
+  username: string;
+  stylistId: string;
+  serviceId: string;
 };
 
 export default function AppointmentsPage() {
@@ -98,37 +104,28 @@ export default function AppointmentsPage() {
   };
 
   // Hàm tạo dữ liệu giả cho historyResponse
-  const getFakeHistoryData = (): ServiceHistory[] => [
-    {
-      id: "1",
-      date: "2025-05-18",
-      service: "Cắt tóc nữ",
-      stylist: "Lê Thị C",
-      total: "150.000đ",
-    },
-    {
-      id: "2",
-      date: "2025-05-17",
-      service: "Nhuộm tóc",
-      stylist: "Phạm Văn D",
-      total: "200.000đ",
-    },
-    {
-      id: "3",
-      date: "2025-05-16",
-      service: "Uốn tóc",
-      stylist: "Nguyễn Thị E",
-      total: "300.000đ",
-    },
-    {
-      id: "4",
-      date: "2025-05-15",
-      service: "Gội đầu massage",
-      stylist: "Trần Văn F",
-      total: "100.000đ",
-    },
-  ];
-
+  const getDataHistory = async (): Promise<ServiceHistory[]> => {
+    try {
+      const invoicesResponse = await getInvoicesListByUser();
+      console.log(invoicesResponse);
+      return invoicesResponse.map((invoice: any, index: number) => ({
+        id: index + 1,
+        _id: invoice._id,
+        date: invoice.date,
+        service: invoice.service,
+        stylist: invoice.stylist,
+        total: invoice.total,
+        phone: invoice.phone,
+        branchId: invoice.branchId,
+        username: invoice.username,
+        stylistId: invoice.stylistId,
+        serviceId: invoice.serviceId,
+      }));
+    } catch (error) {
+      console.error("Get fake history data error:", error);
+      return [];
+    }
+  };
   // Gọi API và sử dụng dữ liệu giả cho historyResponse
   useEffect(() => {
     const fetchData = async () => {
@@ -155,7 +152,7 @@ export default function AppointmentsPage() {
         setAppointmentsData(appointmentsData);
 
         // Sử dụng dữ liệu giả cho historyResponse thay vì gọi API
-        const history = getFakeHistoryData();
+        const history = await getDataHistory();
         setServiceHistoryData(history);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Lỗi get data ");
