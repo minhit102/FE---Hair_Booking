@@ -14,6 +14,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,7 +53,14 @@ import {
   Star,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getHairStylists } from "@/lib/api/hair-stylist";
+import {
+  getHairStylists,
+  updateHairStylist,
+  deleteHairStylist,
+} from "@/lib/api/hair-stylist";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 interface HairStylists {
   id: string;
@@ -59,6 +81,14 @@ interface PaginatedResponse {
   limit: number;
 }
 
+const formSchema = z.object({
+  username: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
+  email: z.string().email("Email không hợp lệ"),
+  phone: z.string().min(10, "Số điện thoại phải có ít nhất 10 ký tự"),
+  baseSalary: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
+  status: z.enum(["active", "inactive"]),
+});
+
 export function EmployeesTable() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,7 +98,22 @@ export function EmployeesTable() {
   const [totalItems, setTotalItems] = useState(0);
   const [employees, setEmployees] = useState<HairStylists[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<HairStylists | null>(
+    null
+  );
   const itemsPerPage = 10;
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      phone: "",
+      baseSalary: 0,
+      status: "active",
+    },
+  });
 
   const fetchEmployees = async () => {
     try {
@@ -97,6 +142,41 @@ export function EmployeesTable() {
 
   const handleEmployeeClick = (employeeId: string) => {
     router.push(`/employees/${employeeId}`);
+  };
+
+  const handleEditClick = (employee: HairStylists) => {
+    setSelectedEmployee(employee);
+    form.reset({
+      username: employee.username,
+      email: employee.email,
+      phone: employee.phone,
+      baseSalary: Number(employee.baseSalary),
+      status: employee.status,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (employee: HairStylists) => {
+    setSelectedEmployee(employee);
+    setIsEditDialogOpen(true);
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!selectedEmployee) return;
+
+    try {
+      await updateHairStylist({
+        id: selectedEmployee.id,
+        ...values,
+        baseSalary: values.baseSalary,
+      });
+      toast.success("Cập nhật thông tin nhân viên thành công");
+      setIsEditDialogOpen(false);
+      fetchEmployees(); // Refresh the list
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      toast.error("Không thể cập nhật thông tin nhân viên");
+    }
   };
 
   return (
@@ -187,7 +267,7 @@ export function EmployeesTable() {
                   <TableCell>
                     <Badge
                       variant={
-                        employee.status === "active" ? "default" : "secondary"
+                        employee.status === "active" ? "default" : "destructive"
                       }
                     >
                       {employee.status === "active"
@@ -211,9 +291,16 @@ export function EmployeesTable() {
                         >
                           Xem chi tiết
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Chỉnh sửa</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleEditClick(employee)}
+                        >
+                          Chỉnh sửa
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDeleteClick(employee)}
+                        >
                           Xóa
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -256,6 +343,101 @@ export function EmployeesTable() {
           </div>
         </div>
       )}
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa thông tin nhân viên</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tên nhân viên</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Số điện thoại</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="baseSalary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lương cơ bản</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Đang làm việc</SelectItem>
+                        <SelectItem value="inactive">Nghỉ việc</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Lưu thay đổi</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

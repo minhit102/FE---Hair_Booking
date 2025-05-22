@@ -18,10 +18,19 @@ export interface Employee {
   username: string;
   email: string;
   phone: string;
-  baseSalary: string;
+  baseSalary: number;
   status: "active" | "inactive";
   imgAvatar: string;
   invoiceCount: number;
+}
+
+export interface UpdateEmployeeParams {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  baseSalary: number;
+  status: "active" | "inactive";
 }
 
 export interface PaginatedResponse {
@@ -53,3 +62,19 @@ export async function getHairStylistById({ id }: { id: string }) {
   const response = await api.get(`/admin/hair-stylist/${id}/detail`);
   return response.data;
 }
+
+export const updateHairStylist = async (params: UpdateEmployeeParams) => {
+  const response = await api.put(`/admin/hair-stylist/${params.id}`, {
+    username: params.username,
+    email: params.email,
+    phone: params.phone,
+    baseSalary: params.baseSalary,
+    status: params.status,
+  });
+  return response.data;
+};
+
+export const deleteHairStylist = async (id: string) => {
+  const response = await api.delete(`/admin/hair-stylist/${id}`);
+  return response.data;
+};
