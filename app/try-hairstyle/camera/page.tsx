@@ -7,10 +7,18 @@ import {
   CameraOff,
   FlipHorizontal,
   Camera as CameraIcon,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import axios from "axios";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HairstyleGallery } from "@/components/hairstyle-gallery";
+import {
+  getImageLightXResponse,
+  getOrderStatus,
+  preSignedUrl,
+} from "@/services/try-hairStyle/try-hairstyle.api";
 
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -20,49 +28,77 @@ export default function CameraPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [processingStep, setProcessingStep] = useState<string>("");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [resultImage, setResultImage] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [selectedHairstyle, setSelectedHairstyle] = useState<string>("");
+
+  // Function to check order status
+  const checkOrderStatus = async (orderId: string) => {
+    try {
+      const response = await getOrderStatus(orderId);
+
+      if (response.status === 200 && response.data.body?.output) {
+        setResultImage(response.data.body.output);
+        setProcessingStep("");
+        toast.success("Xử lý ảnh hoàn tất!");
+        return true;
+      } else if (response.status === 200 && !response.data.body?.output) {
+        toast.error("Xử lý ảnh thất bại");
+        setProcessingStep("");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error checking order status:", error);
+      return false;
+    }
+  };
+
+  // Effect to poll order status
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (orderId && !resultImage) {
+      intervalId = setInterval(async () => {
+        const isCompleted = await checkOrderStatus(orderId);
+        if (isCompleted) {
+          clearInterval(intervalId);
+        }
+        setRetryCount((prev) => prev + 1);
+      }, 7000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [orderId, resultImage]);
 
   const startCamera = async () => {
     try {
-      setError(null);
-      // Kiểm tra xem trình duyệt có hỗ trợ getUserMedia không
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Trình duyệt của bạn không hỗ trợ truy cập camera");
-      }
-
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: {
-          facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          facingMode: isFlipped ? "environment" : "user",
         },
-        audio: false,
-      });
+      };
 
+      const mediaStream = await navigator.mediaDevices.getUserMedia(
+        constraints
+      );
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        // Đảm bảo video được tải
-        await videoRef.current.play();
       }
       setIsCameraOn(true);
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      let errorMessage = "Không thể truy cập camera";
-
-      if (error instanceof Error) {
-        if (error.name === "NotAllowedError") {
-          errorMessage =
-            "Vui lòng cho phép truy cập camera trong trình duyệt của bạn";
-        } else if (error.name === "NotFoundError") {
-          errorMessage = "Không tìm thấy camera trên thiết bị của bạn";
-        } else if (error.name === "NotReadableError") {
-          errorMessage = "Camera đang được sử dụng bởi ứng dụng khác";
-        }
-      }
-
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setIsCameraOn(false);
+      setError(null);
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      setError("Không thể truy cập camera. Vui lòng kiểm tra quyền truy cập.");
     }
   };
 
@@ -72,32 +108,13 @@ export default function CameraPage() {
       setStream(null);
     }
     setIsCameraOn(false);
-    setError(null);
   };
 
-  const flipCamera = async () => {
-    stopCamera();
-    try {
-      setError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: isFlipped ? "user" : "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        await videoRef.current.play();
-      }
-      setIsFlipped(!isFlipped);
-      setIsCameraOn(true);
-    } catch (error) {
-      console.error("Error flipping camera:", error);
-      toast.error("Không thể chuyển đổi camera");
-      setError("Không thể chuyển đổi camera");
+  const flipCamera = () => {
+    setIsFlipped(!isFlipped);
+    if (stream) {
+      stopCamera();
+      startCamera();
     }
   };
 
@@ -108,18 +125,11 @@ export default function CameraPage() {
       const context = canvas.getContext("2d");
 
       if (context) {
-        // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-
-        // Draw the current video frame on the canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Convert canvas to image data URL
-        const imageDataUrl = canvas.toDataURL("image/jpeg");
-        setCapturedImage(imageDataUrl);
-
-        // Stop the camera after capturing
+        const imageData = canvas.toDataURL("image/jpeg");
+        setCapturedImage(imageData);
         stopCamera();
       }
     }
@@ -131,8 +141,13 @@ export default function CameraPage() {
   };
 
   const handleTryHairstyle = async () => {
-    if (capturedImage) {
+    if (capturedImage && selectedHairstyle) {
       try {
+        setIsLoading(true);
+        setProcessingStep("Đang chuẩn bị ảnh...");
+        setResultImage(null);
+        setRetryCount(0);
+
         // Convert base64 to Blob to get file size and type
         const base64Data = capturedImage.split(",")[1];
         const byteCharacters = atob(base64Data);
@@ -157,20 +172,40 @@ export default function CameraPage() {
           size: blob.size,
           contentType: blob.type,
         };
-        const signedUrl = await axios.post("/api/pre-signed-url", imageData);
+        setProcessingStep("Đang lấy URL upload...");
+        const signedUrlResponse = await preSignedUrl(imageData);
+        const { uploadImage, imageUrl } = signedUrlResponse.body;
 
-        // Get pre-signed URL from API
-        // const response = await axios.post("/api/pre-signed-url", imageData);
+        // Upload image to S3 using pre-signed URL
+        setProcessingStep("Đang upload ảnh...");
+        const data = await axios.put(uploadImage, blob, {
+          headers: {
+            "Content-Type": blob.type,
+          },
+        });
 
-        // if (response.data) {
-        //   // Here you can handle the pre-signed URL response
-        //   console.log("Pre-signed URL received:", response.data);
-        //   toast.success("Đã sẵn sàng để thử kiểu tóc!");
-        // }
-      } catch (error) {
-        console.error("Error getting pre-signed URL:", error);
-        toast.error("Có lỗi xảy ra khi xử lý ảnh");
+        // Send request to LightX API for image processing
+        setProcessingStep("Đang xử lý ảnh...");
+        const lightXResponse = await getImageLightXResponse({
+          imageUrl: imageUrl,
+          textPrompt: selectedHairstyle,
+        });
+
+        if (lightXResponse.data.body?.orderId) {
+          setOrderId(lightXResponse.data.body.orderId);
+          setProcessingStep("Đang chờ xử lý ảnh...");
+        }
+      } catch (error: any) {
+        console.error("Error processing image:", error);
+        const errorMessage =
+          error.response?.data?.message || "Có lỗi xảy ra khi xử lý ảnh";
+        toast.error(errorMessage);
+        setProcessingStep("");
+      } finally {
+        setIsLoading(false);
       }
+    } else if (!selectedHairstyle) {
+      toast.error("Vui lòng chọn kiểu tóc");
     }
   };
 
@@ -183,106 +218,179 @@ export default function CameraPage() {
   }, [stream]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="relative aspect-[4/3] bg-black">
-          {!capturedImage ? (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <canvas ref={canvasRef} className="hidden" />
-              {!isCameraOn && (
-                <div className="absolute inset-0 flex items-center justify-center text-white">
-                  <CameraOff className="w-16 h-16" />
-                </div>
-              )}
-              {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white p-4 text-center">
-                  {error}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="relative w-full h-full">
-              <Image
-                src={capturedImage}
-                alt="Captured"
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
+    <div className="container py-6 px-4 md:px-6">
+      <div className="max-w-5xl mx-auto space-y-4">
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-bold tracking-tighter">Chụp ảnh</h1>
+          <p className="text-sm text-gray-500">
+            Chụp ảnh khuôn mặt của bạn để thử các kiểu tóc khác nhau
+          </p>
         </div>
 
-        <div className="p-4 flex justify-center gap-4">
-          {!capturedImage ? (
-            <>
+        <div className="grid gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Ảnh gốc</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  {!capturedImage ? (
+                    <>
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                      <canvas ref={canvasRef} className="hidden" />
+                      {!isCameraOn && (
+                        <div className="absolute inset-0 flex items-center justify-center text-white">
+                          <CameraOff className="w-16 h-16" />
+                        </div>
+                      )}
+                      {error && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white p-4 text-center">
+                          {error}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={capturedImage}
+                        alt="Captured"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-center gap-2">
+                  {!capturedImage ? (
+                    <>
+                      <Button
+                        onClick={isCameraOn ? stopCamera : startCamera}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        {isCameraOn ? (
+                          <>
+                            <CameraOff className="w-4 h-4" />
+                            Tắt camera
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            Bật camera
+                          </>
+                        )}
+                      </Button>
+
+                      {isCameraOn && (
+                        <>
+                          <Button
+                            onClick={flipCamera}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                          >
+                            <FlipHorizontal className="w-4 h-4" />
+                            Đổi camera
+                          </Button>
+
+                          <Button
+                            onClick={capturePhoto}
+                            size="sm"
+                            className="flex items-center gap-2"
+                          >
+                            <CameraIcon className="w-4 h-4" />
+                            Chụp ảnh
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={retakePhoto}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Chụp lại
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Kết quả</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  {resultImage ? (
+                    <Image
+                      src={resultImage}
+                      alt="Result"
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                      {processingStep ? (
+                        <div className="text-center">
+                          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-1" />
+                          <p className="text-sm">{processingStep}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm">Chưa có kết quả</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Chọn kiểu tóc</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HairstyleGallery
+                onSelect={setSelectedHairstyle}
+                selectedPrompt={selectedHairstyle}
+              />
+            </CardContent>
+          </Card>
+
+          {capturedImage && (
+            <div className="flex justify-center">
               <Button
-                onClick={isCameraOn ? stopCamera : startCamera}
-                variant="outline"
-                size="lg"
+                onClick={handleTryHairstyle}
                 className="flex items-center gap-2"
+                disabled={isLoading}
               >
-                {isCameraOn ? (
+                {isLoading ? (
                   <>
-                    <CameraOff className="w-5 h-5" />
-                    Tắt camera
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span className="text-sm">{processingStep}</span>
                   </>
                 ) : (
                   <>
-                    <Camera className="w-5 h-5" />
-                    Bật camera
+                    <CameraIcon className="h-4 w-4" />
+                    <span className="text-sm">Thử kiểu tóc</span>
                   </>
                 )}
               </Button>
-
-              {isCameraOn && (
-                <>
-                  <Button
-                    onClick={flipCamera}
-                    variant="outline"
-                    size="lg"
-                    className="flex items-center gap-2"
-                  >
-                    <FlipHorizontal className="w-5 h-5" />
-                    Đổi camera
-                  </Button>
-
-                  <Button
-                    onClick={capturePhoto}
-                    size="lg"
-                    className="flex items-center gap-2"
-                  >
-                    <CameraIcon className="w-5 h-5" />
-                    Chụp ảnh
-                  </Button>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={retakePhoto}
-                variant="outline"
-                size="lg"
-                className="flex items-center gap-2"
-              >
-                <Camera className="w-5 h-5" />
-                Chụp lại
-              </Button>
-
-              <Button
-                onClick={handleTryHairstyle}
-                size="lg"
-                className="flex items-center gap-2"
-              >
-                Thử kiểu tóc
-              </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
