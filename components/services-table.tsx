@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -28,77 +28,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, MoreHorizontal, Search } from "lucide-react";
+import { getService } from "@/lib/api/service";
+import { Switch } from "@/components/ui/switch";
 
-const services = [
-  {
-    id: 1,
-    name: "Cắt tóc nam",
-    category: "Cắt tóc",
-    price: 100000,
-    duration: 30,
-    popular: true,
-  },
-  {
-    id: 2,
-    name: "Cắt tóc nữ",
-    category: "Cắt tóc",
-    price: 150000,
-    duration: 45,
-    popular: true,
-  },
-  {
-    id: 3,
-    name: "Nhuộm tóc",
-    category: "Nhuộm",
-    price: 500000,
-    duration: 120,
-    popular: true,
-  },
-  {
-    id: 4,
-    name: "Uốn tóc",
-    category: "Uốn",
-    price: 600000,
-    duration: 150,
-    popular: false,
-  },
-  {
-    id: 5,
-    name: "Gội đầu",
-    category: "Gội",
-    price: 80000,
-    duration: 20,
-    popular: false,
-  },
-  {
-    id: 6,
-    name: "Duỗi tóc",
-    category: "Duỗi",
-    price: 700000,
-    duration: 180,
-    popular: false,
-  },
-  {
-    id: 7,
-    name: "Tạo kiểu tóc",
-    category: "Tạo kiểu",
-    price: 200000,
-    duration: 45,
-    popular: true,
-  },
-  {
-    id: 8,
-    name: "Massage đầu",
-    category: "Massage",
-    price: 120000,
-    duration: 30,
-    popular: false,
-  },
-];
+const getServices = async () => {
+  const response = await getService();
+  return response;
+};
 
 export function ServicesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [services, setServices] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      const data = await getServices();
+      const formattedServices = data.map(
+        (serviceConvert: any, index: number) => ({
+          id: index + 1,
+          _id: serviceConvert._id,
+          name: serviceConvert.name,
+          price: serviceConvert.price,
+          duration: serviceConvert.duration,
+          popular: serviceConvert.popular,
+          isActive: serviceConvert.isActive,
+        })
+      );
+      setServices(formattedServices);
+    };
+    fetchServices();
+  }, []);
 
   const filteredServices = services.filter((service) => {
     const matchesSearch = service.name
@@ -110,7 +70,6 @@ export function ServicesTable() {
 
     return matchesSearch && matchesCategory;
   });
-
   const formatPrice = (price: any) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -135,23 +94,7 @@ export function ServicesTable() {
           </div>
         </div>
 
-        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Danh mục" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả danh mục</SelectItem>
-              <SelectItem value="Cắt tóc">Cắt tóc</SelectItem>
-              <SelectItem value="Nhuộm">Nhuộm</SelectItem>
-              <SelectItem value="Uốn">Uốn</SelectItem>
-              <SelectItem value="Duỗi">Duỗi</SelectItem>
-              <SelectItem value="Gội">Gội</SelectItem>
-              <SelectItem value="Tạo kiểu">Tạo kiểu</SelectItem>
-              <SelectItem value="Massage">Massage</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0"></div>
       </div>
 
       <div className="rounded-md border">
@@ -159,10 +102,10 @@ export function ServicesTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Tên dịch vụ</TableHead>
-              <TableHead>Danh mục</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Thời gian</TableHead>
               <TableHead>Trạng thái</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
@@ -179,7 +122,6 @@ export function ServicesTable() {
                   <TableCell>
                     <div className="font-medium">{service.name}</div>
                   </TableCell>
-                  <TableCell>{service.category}</TableCell>
                   <TableCell>{formatPrice(service.price)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -193,6 +135,15 @@ export function ServicesTable() {
                     ) : (
                       <Badge variant="outline">Thông thường</Badge>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`font-medium ${
+                        service.isActive ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {service.isActive ? "Đang hoạt động" : "Tạm dừng "}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

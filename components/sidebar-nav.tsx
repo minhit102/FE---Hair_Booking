@@ -42,12 +42,6 @@ const sidebarNavItems = [
     label: "Lịch hẹn",
   },
   {
-    title: "CustomerRegistration",
-    href: "/customer-registration",
-    icon: UserPlus,
-    label: "Đăng ký khách hàng",
-  },
-  {
     title: "Employees",
     href: "/employees",
     icon: Users,
@@ -58,12 +52,6 @@ const sidebarNavItems = [
     href: "/services",
     icon: Scissors,
     label: "Dịch vụ",
-  },
-  {
-    title: "Revenue",
-    href: "/revenue",
-    icon: CreditCard,
-    label: "Doanh thu",
   },
   {
     title: "Customers",

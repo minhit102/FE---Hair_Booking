@@ -71,7 +71,7 @@ interface HairStylists {
   username: string;
   email: string;
   phone: string;
-  baseSalary: string;
+  salaryBase: string;
   status: "active" | "inactive";
   imgAvatar: string;
   invoiceCount: number;
@@ -89,7 +89,7 @@ const formSchema = z.object({
   username: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
   email: z.string().email("Email không hợp lệ"),
   phone: z.string().min(10, "Số điện thoại phải có ít nhất 10 ký tự"),
-  baseSalary: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
+  salaryBase: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
   status: z.enum(["active", "inactive"]),
 });
 
@@ -98,7 +98,7 @@ const createFormSchema = z
     username: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
     email: z.string().email("Email không hợp lệ"),
     phone: z.string().min(10, "Số điện thoại phải có ít nhất 10 ký tự"),
-    baseSalary: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
+    salaryBase: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
     status: z.enum(["active", "inactive"]),
     password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
     confirmPassword: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
@@ -134,7 +134,7 @@ export function EmployeesTable() {
       username: "",
       email: "",
       phone: "",
-      baseSalary: 0,
+      salaryBase: 0,
       status: "active",
     },
   });
@@ -145,7 +145,7 @@ export function EmployeesTable() {
       username: "",
       email: "",
       phone: "",
-      baseSalary: 0,
+      salaryBase: 0,
       status: "active",
       password: "",
       confirmPassword: "",
@@ -187,7 +187,7 @@ export function EmployeesTable() {
       username: employee.username,
       email: employee.email,
       phone: employee.phone,
-      baseSalary: Number(employee.baseSalary),
+      salaryBase: Number(employee.salaryBase),
       status: employee.status,
     });
     setIsEditDialogOpen(true);
@@ -219,7 +219,7 @@ export function EmployeesTable() {
       await updateHairStylist({
         id: selectedEmployee.id,
         ...values,
-        baseSalary: values.baseSalary,
+        salaryBase: values.salaryBase,
       });
       toast.success("Cập nhật thông tin nhân viên thành công");
       setIsEditDialogOpen(false);
@@ -336,7 +336,7 @@ export function EmployeesTable() {
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>{employee.phone}</TableCell>
                   <TableCell>{employee.invoiceCount}</TableCell>
-                  <TableCell>{employee.baseSalary}</TableCell>
+                  <TableCell>{employee.salaryBase}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -469,7 +469,7 @@ export function EmployeesTable() {
               />
               <FormField
                 control={form.control}
-                name="baseSalary"
+                name="salaryBase"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lương cơ bản (VND)</FormLabel>
@@ -635,7 +635,7 @@ export function EmployeesTable() {
               />
               <FormField
                 control={createForm.control}
-                name="baseSalary"
+                name="salaryBase"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lương cơ bản (VND)</FormLabel>

@@ -18,7 +18,7 @@ export interface Employee {
   username: string;
   email: string;
   phone: string;
-  baseSalary: number;
+  salaryBase: number;
   status: "active" | "inactive";
   imgAvatar: string;
   invoiceCount: number;
@@ -29,7 +29,7 @@ export interface UpdateEmployeeParams {
   username: string;
   email: string;
   phone: string;
-  baseSalary: number;
+  salaryBase: number;
   status: "active" | "inactive";
 }
 
@@ -45,7 +45,7 @@ export interface CreateEmployeeParams {
   username: string;
   email: string;
   phone: string;
-  baseSalary: number;
+  salaryBase: number;
   status: "active" | "inactive";
   password: string;
 }
@@ -77,7 +77,7 @@ export const updateHairStylist = async (params: UpdateEmployeeParams) => {
     username: params.username,
     email: params.email,
     phone: params.phone,
-    baseSalary: params.baseSalary,
+    salaryBase: params.salaryBase,
     status: params.status,
   });
   return response.data;
