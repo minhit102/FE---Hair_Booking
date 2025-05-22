@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -102,6 +103,10 @@ export function EmployeesTable() {
   const [selectedEmployee, setSelectedEmployee] = useState<HairStylists | null>(
     null
   );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<HairStylists | null>(
+    null
+  );
   const itemsPerPage = 10;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -157,8 +162,22 @@ export function EmployeesTable() {
   };
 
   const handleDeleteClick = (employee: HairStylists) => {
-    setSelectedEmployee(employee);
-    setIsEditDialogOpen(true);
+    setEmployeeToDelete(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!employeeToDelete) return;
+
+    try {
+      await deleteHairStylist(employeeToDelete.id);
+      toast.success("Xóa nhân viên thành công");
+      setIsDeleteDialogOpen(false);
+      fetchEmployees(); // Refresh the list
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      toast.error("Không thể xóa nhân viên");
+    }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -436,6 +455,29 @@ export function EmployeesTable() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa nhân viên {employeeToDelete?.username}?
+              Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Xóa
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
