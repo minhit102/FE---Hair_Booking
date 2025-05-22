@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { NumericFormat, NumericFormatProps } from "react-number-format";
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
+  Plus,
   Search,
   Star,
 } from "lucide-react";
@@ -58,6 +60,7 @@ import {
   getHairStylists,
   updateHairStylist,
   deleteHairStylist,
+  createHairStylist,
 } from "@/lib/api/hair-stylist";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -90,6 +93,21 @@ const formSchema = z.object({
   status: z.enum(["active", "inactive"]),
 });
 
+const createFormSchema = z
+  .object({
+    username: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
+    email: z.string().email("Email không hợp lệ"),
+    phone: z.string().min(10, "Số điện thoại phải có ít nhất 10 ký tự"),
+    baseSalary: z.number().min(0, "Lương cơ bản phải lớn hơn 0"),
+    status: z.enum(["active", "inactive"]),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    confirmPassword: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu không khớp",
+    path: ["confirmPassword"],
+  });
+
 export function EmployeesTable() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,6 +125,7 @@ export function EmployeesTable() {
   const [employeeToDelete, setEmployeeToDelete] = useState<HairStylists | null>(
     null
   );
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const itemsPerPage = 10;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -117,6 +136,19 @@ export function EmployeesTable() {
       phone: "",
       baseSalary: 0,
       status: "active",
+    },
+  });
+
+  const createForm = useForm<z.infer<typeof createFormSchema>>({
+    resolver: zodResolver(createFormSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      phone: "",
+      baseSalary: 0,
+      status: "active",
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -198,6 +230,26 @@ export function EmployeesTable() {
     }
   };
 
+  const handleCreateClick = () => {
+    createForm.reset();
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateSubmit = async (
+    values: z.infer<typeof createFormSchema>
+  ) => {
+    try {
+      const { confirmPassword, ...createData } = values;
+      await createHairStylist(createData);
+      toast.success("Thêm nhân viên thành công");
+      setIsCreateDialogOpen(false);
+      fetchEmployees(); // Refresh the list
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      toast.error("Vui lòng kiểm tra lại thông tin nhân viên");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -212,9 +264,6 @@ export function EmployeesTable() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-
-        <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Trạng thái" />
@@ -226,6 +275,11 @@ export function EmployeesTable() {
             </SelectContent>
           </Select>
         </div>
+
+        <Button onClick={handleCreateClick} className="w-full md:w-auto">
+          <Plus className="mr-2 h-4 w-4" />
+          Thêm nhân viên
+        </Button>
       </div>
 
       <div className="rounded-md border">
@@ -377,7 +431,7 @@ export function EmployeesTable() {
                   <FormItem>
                     <FormLabel>Tên nhân viên</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="Example Hoang" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -390,7 +444,11 @@ export function EmployeesTable() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" />
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="example@gmail.com"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -403,7 +461,7 @@ export function EmployeesTable() {
                   <FormItem>
                     <FormLabel>Số điện thoại</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} placeholder="0123456789" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -414,12 +472,19 @@ export function EmployeesTable() {
                 name="baseSalary"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Lương cơ bản</FormLabel>
+                    <FormLabel>Lương cơ bản (VND)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, "");
+                          field.onChange(value ? Number(value) : 0);
+                        }}
+                        placeholder="8000000"
                       />
                     </FormControl>
                     <FormMessage />
@@ -478,6 +543,149 @@ export function EmployeesTable() {
               Xóa
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Thêm nhân viên mới</DialogTitle>
+          </DialogHeader>
+          <Form {...createForm}>
+            <form
+              onSubmit={createForm.handleSubmit(handleCreateSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={createForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tên nhân viên</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Example Hoang" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="example@gmail.com"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Số điện thoại</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="0123456789" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mật khẩu</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="********"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Xác nhận mật khẩu</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="********"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="baseSalary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lương cơ bản (VND)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        {...field}
+                        value={field.value}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, "");
+                          field.onChange(value ? Number(value) : 0);
+                        }}
+                        placeholder="8000000"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn trạng thái" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Đang làm việc</SelectItem>
+                        <SelectItem value="inactive">Nghỉ việc</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">Thêm nhân viên</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

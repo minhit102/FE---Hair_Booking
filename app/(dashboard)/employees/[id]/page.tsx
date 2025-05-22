@@ -102,10 +102,6 @@ export default function EmployeeDetailPage() {
             Thông tin nhân viên
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">Chỉnh sửa</Button>
-          <Button variant="destructive">Xóa</Button>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[300px_1fr]">

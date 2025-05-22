@@ -41,6 +41,15 @@ export interface PaginatedResponse {
   limit: number;
 }
 
+export interface CreateEmployeeParams {
+  username: string;
+  email: string;
+  phone: string;
+  baseSalary: number;
+  status: "active" | "inactive";
+  password: string;
+}
+
 export async function getHairStylists({
   page,
   limit,
@@ -76,5 +85,10 @@ export const updateHairStylist = async (params: UpdateEmployeeParams) => {
 
 export const deleteHairStylist = async (id: string) => {
   const response = await api.delete(`/admin/hair-stylist/${id}`);
+  return response.data;
+};
+
+export const createHairStylist = async (params: CreateEmployeeParams) => {
+  const response = await api.post("/admin/hair-stylist", params);
   return response.data;
 };
