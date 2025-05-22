@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -9,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,89 +29,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarClock, MoreHorizontal, Search, Star } from "lucide-react";
+import {
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Search,
+  Star,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getHairStylists } from "@/lib/api/hair-stylist";
 
-const employees = [
-  {
-    id: 1,
-    name: "Nguyễn Văn Minh",
-    position: "Thợ cắt tóc",
-    phone: "0901234567",
-    schedule: "08:00 - 17:00",
-    rating: 4.8,
-    services: 245,
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Trần Thị Hương",
-    position: "Thợ nhuộm",
-    phone: "0901234568",
-    schedule: "08:00 - 17:00",
-    rating: 4.7,
-    services: 198,
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Lê Văn Tâm",
-    position: "Thợ cắt tóc",
-    phone: "0901234569",
-    schedule: "13:00 - 22:00",
-    rating: 4.9,
-    services: 312,
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị Hà",
-    position: "Thợ gội đầu",
-    phone: "0901234570",
-    schedule: "13:00 - 22:00",
-    rating: 4.6,
-    services: 178,
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn Nam",
-    position: "Thợ cắt tóc",
-    phone: "0901234571",
-    schedule: "08:00 - 17:00",
-    rating: 4.5,
-    services: 156,
-    status: "inactive",
-  },
-  {
-    id: 6,
-    name: "Đỗ Thị Lan",
-    position: "Thợ uốn tóc",
-    phone: "0901234572",
-    schedule: "13:00 - 22:00",
-    rating: 4.7,
-    services: 203,
-    status: "active",
-  },
-];
+interface HairStylists {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  baseSalary: string;
+  status: "active" | "inactive";
+  imgAvatar: string;
+  invoiceCount: number;
+}
+
+interface PaginatedResponse {
+  hairStylists: HairStylists[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
 
 export function EmployeesTable() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [positionFilter, setPositionFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [employees, setEmployees] = useState<HairStylists[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const itemsPerPage = 10;
 
-  const filteredEmployees = employees.filter((employee) => {
-    const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.phone.includes(searchTerm);
+  const fetchEmployees = async () => {
+    try {
+      setIsLoading(true);
+      const response = await getHairStylists({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm,
+        status: statusFilter,
+      });
+      const data: PaginatedResponse = response;
+      setEmployees(data?.hairStylists || []);
+      setTotalPages(data?.totalPages || 1);
+      setTotalItems(data?.total || 0);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      toast.error("Không thể tải danh sách nhân viên");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const matchesPosition =
-      positionFilter === "all" || employee.position === positionFilter;
+  useEffect(() => {
+    fetchEmployees();
+  }, [currentPage, searchTerm, statusFilter]);
 
-    const matchesStatus =
-      statusFilter === "all" || employee.status === statusFilter;
-
-    return matchesSearch && matchesPosition && matchesStatus;
-  });
+  const handleEmployeeClick = (employeeId: string) => {
+    router.push(`/employees/${employeeId}`);
+  };
 
   return (
     <div className="space-y-4">
@@ -120,7 +107,7 @@ export function EmployeesTable() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Tìm nhân viên hoặc số điện thoại..."
+              placeholder="Tìm nhân viên..."
               className="pl-8 md:w-[300px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -129,19 +116,6 @@ export function EmployeesTable() {
         </div>
 
         <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
-          <Select value={positionFilter} onValueChange={setPositionFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Vị trí" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả vị trí</SelectItem>
-              <SelectItem value="Thợ cắt tóc">Thợ cắt tóc</SelectItem>
-              <SelectItem value="Thợ nhuộm">Thợ nhuộm</SelectItem>
-              <SelectItem value="Thợ uốn tóc">Thợ uốn tóc</SelectItem>
-              <SelectItem value="Thợ gội đầu">Thợ gội đầu</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Trạng thái" />
@@ -160,53 +134,56 @@ export function EmployeesTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Nhân viên</TableHead>
-              <TableHead>Vị trí</TableHead>
-              <TableHead>Lịch làm việc</TableHead>
-              <TableHead>Đánh giá</TableHead>
-              <TableHead>Dịch vụ</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Số điện thoại</TableHead>
+              <TableHead>Số lượng hóa đơn</TableHead>
+              <TableHead>Lương cơ bản</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredEmployees.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  Đang tải...
+                </TableCell>
+              </TableRow>
+            ) : employees.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Không tìm thấy nhân viên nào
                 </TableCell>
               </TableRow>
             ) : (
-              filteredEmployees.map((employee) => (
+              employees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer hover:opacity-80"
+                      onClick={() => handleEmployeeClick(employee.id)}
+                    >
                       <Avatar>
-                        <AvatarFallback>
-                          {employee.name.charAt(0)}
-                        </AvatarFallback>
+                        {employee.imgAvatar ? (
+                          <AvatarImage
+                            src={employee.imgAvatar}
+                            alt={employee.username}
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {employee.username.charAt(0)}
+                          </AvatarFallback>
+                        )}
                       </Avatar>
                       <div>
-                        <div className="font-medium">{employee.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {employee.phone}
-                        </div>
+                        <div className="font-medium">{employee.username}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{employee.position}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                      <span>{employee.schedule}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-primary text-primary" />
-                      <span>{employee.rating}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{employee.services}</TableCell>
+                  <TableCell>{employee.email}</TableCell>
+                  <TableCell>{employee.phone}</TableCell>
+                  <TableCell>{employee.invoiceCount}</TableCell>
+                  <TableCell>{employee.baseSalary}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
@@ -229,11 +206,16 @@ export function EmployeesTable() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Chỉnh sửa thông tin</DropdownMenuItem>
-                        <DropdownMenuItem>Gán ca làm việc</DropdownMenuItem>
-                        <DropdownMenuItem>Gửi thông báo</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleEmployeeClick(employee.id)}
+                        >
+                          Xem chi tiết
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Chỉnh sửa</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Xem lịch sử dịch vụ</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">
+                          Xóa
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -243,6 +225,37 @@ export function EmployeesTable() {
           </TableBody>
         </Table>
       </div>
+
+      {!isLoading && employees.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, totalItems)} của {totalItems}{" "}
+            nhân viên
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm">
+              Trang {currentPage} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages || isLoading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

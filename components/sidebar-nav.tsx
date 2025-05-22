@@ -66,12 +66,6 @@ const sidebarNavItems = [
     label: "Doanh thu",
   },
   {
-    title: "Schedule",
-    href: "/schedule",
-    icon: Clock,
-    label: "Lịch làm việc",
-  },
-  {
     title: "Customers",
     href: "/customers",
     icon: UserRound,

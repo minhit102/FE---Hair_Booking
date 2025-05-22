@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmployeesTable } from "@/components/employees-table";
 
 export default function EmployeesPage() {
@@ -22,17 +23,34 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Tất cả nhân viên</CardTitle>
-          <CardDescription>
-            Quản lý thông tin và lịch làm việc của nhân viên
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EmployeesTable />
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="list">
+        <div className="flex items-center justify-between"></div>
+
+        <TabsContent value="list" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tất cả nhân viên</CardTitle>
+              <CardDescription>
+                Quản lý thông tin và lịch làm việc của nhân viên
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmployeesTable />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="schedule" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lịch làm việc</CardTitle>
+              <CardDescription>
+                Xem và quản lý lịch làm việc của nhân viên
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
