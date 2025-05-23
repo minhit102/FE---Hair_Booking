@@ -12,30 +12,30 @@ interface HairstyleImage {
 const hairstyleImages: HairstyleImage[] = [
   {
     id: "1",
-    imageUrl:
-      "https://numihair.com/wp-content/uploads/2024/08/french-crop-haircut.jpg",
-    textPrompt: "French Crop Men",
+    imageUrl: "/hairstyles/anh1.png",
+    textPrompt:
+      "Apply a short, clean taper fade haircut. The sides should be faded gradually from the skin to a short length near the top. The top hair should be about 2 inches long, styled with a side part and a matte finish. Hair color should be natural black. Keep the face, facial features, skin tone, lighting, and background completely unchanged.",
     name: "French Crop Men",
   },
   {
     id: "2",
-    imageUrl: "https://phuloc.com.vn/uploads/blog/classic-pompadour.jpg",
-    textPrompt: "Pompadour Medium Men",
+    imageUrl: "/hairstyles/pompadour.jpg",
+    textPrompt:
+      "A realistic photo of a young Asian man with smooth skin, oval face, black eyebrows, symmetrical facial features, neutral expression, white studio background, French crop hairstyle with 2-inch choppy fringe, textured top, short faded sides (0.5 inch), no hat, photorealistic, high quality, consistent hair length",
     name: "Pompadour Medium Men",
   },
-
   {
     id: "3",
-    imageUrl:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQn9kYMK04Gtt_98l4ZZYYbjqIO-nlhq-u6xw&s",
-    textPrompt: "Side Part Medium Men",
+    imageUrl: "/hairstyles/side-part.jpg",
+    textPrompt:
+      "A realistic photo of a young Asian man with smooth skin, oval face, black eyebrows, symmetrical facial features, neutral expression, white studio background, side part hairstyle with 3-inch neatly combed top, low fade sides (0.5 inch), no hat, photorealistic, high quality, consistent hair length",
     name: "Side Part Medium Men",
   },
   {
     id: "4",
-    imageUrl:
-      "https://i.pinimg.com/736x/cd/06/87/cd06874ebcad5ed5e1aa18e1388f4c32.jpg",
-    textPrompt: "Quiff Men",
+    imageUrl: "/hairstyles/quiff.jpg",
+    textPrompt:
+      "A realistic photo of a young Asian man with smooth skin, oval face, black eyebrows, symmetrical facial features, neutral expression, white studio background, buzz cut hairstyle with uniform 0.5-inch hair, low fade sides, no hat, photorealistic, high quality, consistent hair length",
     name: "Quiff Men",
   },
 ];
@@ -67,7 +67,6 @@ export function HairstyleGallery({
             alt={hairstyle.name}
             fill
             className="object-cover"
-            unoptimized
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
             <span className="text-sm text-white font-medium">
