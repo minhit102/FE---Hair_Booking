@@ -59,6 +59,11 @@ import { createAppointment } from "@/services/appointment/appointment";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 
+// Utility function to format price
+const formatPrice = (price: number) => {
+  return `$${price.toLocaleString("en-US")}`;
+};
+
 // Dữ liệu mẫu cho dịch vụ
 const services = await getServiceList();
 const branchs = await getBranchsList();
@@ -345,11 +350,13 @@ export default function BookingPage() {
                     <CardTitle>{service.name}</CardTitle>
                     <CardDescription className="flex items-center">
                       <Clock className="mr-1 h-4 w-4" />
-                      {service.duration}
+                      {service.duration} phút.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold">{service.price}</p>
+                    <p className="text-2xl font-bold">
+                      {formatPrice(service.price)} VND.
+                    </p>
                   </CardContent>
                   <CardFooter>
                     <Button
@@ -399,17 +406,15 @@ export default function BookingPage() {
                             }
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {
-                              services.find(
-                                (s: any) => s._id === selectedService
-                              )?.duration
-                            }{" "}
+                            {services.find(
+                              (s: any) => s._id === selectedService
+                            )?.duration + " phút"}{" "}
                             •{" "}
-                            {
+                            {formatPrice(
                               services.find(
                                 (s: any) => s._id === selectedService
                               )?.price
-                            }
+                            ) + " VND"}
                           </p>
                         </div>
                         <Button
