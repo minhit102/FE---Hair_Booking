@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Scissors } from "lucide-react";
+import { Scissors, DollarSign } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getServiceList } from "@/services/service/get-service-list.api";
+import { formatCurrency } from "@/lib/utils";
 
 export default async function ServicesPage() {
   const serviceList = await getServiceList();
@@ -32,7 +33,7 @@ export default async function ServicesPage() {
             {serviceList.map((service: any) => (
               <Card
                 key={service.id}
-                className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20"
+                className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20 relative"
               >
                 <CardHeader className="flex flex-col items-start gap-2 pb-2">
                   <div className="relative w-full aspect-square overflow-hidden rounded-lg">
@@ -54,14 +55,15 @@ export default async function ServicesPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-2">
+                <CardContent className="py-2 pb-12">
                   <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
                     {service.description}
                   </p>
                 </CardContent>
-                <CardFooter className="flex justify-between pt-2">
-                  <p className="text-sm font-bold text-primary">
-                    {service.price} VND
+                <CardFooter className="absolute bottom-0 left-0 right-0 p-4 flex justify-between items-center bg-white/80 backdrop-blur-sm">
+                  <p className="text-sm font-bold text-primary flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    {formatCurrency(service.price)} VND
                   </p>
                   <Button
                     asChild
