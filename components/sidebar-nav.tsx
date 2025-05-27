@@ -11,8 +11,6 @@ import {
   Scissors,
   Users,
   UserRound,
-  Clock,
-  UserPlus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -112,7 +110,7 @@ export function SidebarNav() {
                     {user?.name || "Admin"}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {user?.branchName || "Chi nhánh Quận 1"}
+                    {user?.branchName || "AdminAdmin"}
                   </span>
                 </div>
               </div>

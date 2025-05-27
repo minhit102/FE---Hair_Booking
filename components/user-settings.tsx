@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -19,50 +20,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Plus } from "lucide-react";
-
-const users = [
-  {
-    id: 1,
-    name: "Nguyễn Văn Admin1om",
-    role: "admin",
-    branch: "Chi nhánh Quận Minh1",
-    lastActive: "Hôm nay, 10:23",
-  },
-  {
-    id: 2,
-    name: "Trần Thị Quản Lý1",
-    email: "manager@example.com",
-    role: "admin",
-    branch: "Chi nhánh Quận 3",
-    lastActive: "Hôm nay, 09:15",
-  },
-  {
-    id: 3,
-    name: "Lê Văn Trợ Lý1",
-    email: "assistant@example.com",
-    role: "assistant",
-    branch: "Chi nhánh Quận Minh2",
-    lastActive: "Hôm qua, 17:30",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị Nhân Viên11",
-    email: "staff@example.com",
-    role: "staff",
-    branch: "Chi nhánh Quận 1",
-    lastActive: "03/05/2023, 14:45",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn Super",
-    email: "super@example.com",
-    role: "super_admin",
-    branch: "Tất cả chi nhánh",
-    lastActive: "Hôm nay, 11:05",
-  },
-];
+import { getHairStylists } from "@/lib/api/hair-stylist";
 
 export function UserSettings() {
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await getHairStylists({
+          page: 1,
+          limit: 10,
+          search: "",
+          status: "",
+        });
+        setUsers(response.employees);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const getRoleBadge = (role: any) => {
     switch (role) {
       case "super_admin":

@@ -15,14 +15,26 @@ import {
 import { AppointmentsList } from "@/components/appointments-list";
 import { StaffSchedule } from "@/components/staff-schedule";
 import { useEffect, useState } from "react";
-import { getDashboardData } from "@/lib/api/dashboard";
+import { getDashboardData, getRevenue } from "@/lib/api/dashboard";
+
+// Add number formatting function
+const formatNumber = (num: number) => {
+  return new Intl.NumberFormat("vi-VN").format(num);
+};
+
+// Add percentage formatting function
+const formatPercentage = (num: number) => {
+  const sign = num >= 0 ? "+" : "";
+  return `${sign}${num.toFixed(2)}%`;
+};
 
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [revenue, setRevenue] = useState<any>(null);
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const response = await getDashboardData();
-      setDashboardData(response);
+      const revenue = await getRevenue();
+      setRevenue(revenue);
     };
     fetchDashboardData();
   }, []);
@@ -47,8 +59,21 @@ export default function DashboardPage() {
             <CalendarClock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12 Lịch hẹn </div>
-            <p className="text-xs text-muted-foreground">+2 so với hôm qua</p>
+            <div className="text-2xl font-bold">
+              {revenue?.appointment?.totalAppointmentToday} Lịch hẹn
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.appointment?.totalAppointmentTodayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(
+                revenue?.appointment?.totalAppointmentTodayChange
+              )}{" "}
+              so với hôm qua
+            </p>
           </CardContent>
         </Card>
 
@@ -60,8 +85,19 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.250.000 VND</div>
-            <p className="text-xs text-muted-foreground">+15% so với 7 ngay</p>
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.revenue?.totalRevenueToday)} VND
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.revenue?.totalRevenueTodayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.revenue?.totalRevenueTodayChange)} so
+              với hôm qua
+            </p>
           </CardContent>
         </Card>
 
@@ -73,8 +109,19 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3 khách hàng </div>
-            <p className="text-xs text-muted-foreground">+1 so với hôm qua</p>
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.invoice?.totalInvoiceToday)} khách hàng{" "}
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.invoice?.totalInvoiceTodayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.invoice?.totalInvoiceTodayChange)} so
+              với hôm qua
+            </p>
           </CardContent>
         </Card>
 
@@ -86,8 +133,19 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3 VND </div>
-            <p className="text-xs text-muted-foreground">+1 so 7 ngày trước</p>
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.revenue?.totalRevenue7days)} VND{" "}
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.revenue?.totalRevenue7dayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.revenue?.totalRevenue7dayChange)} so
+              với 7 ngày trước
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -98,9 +156,18 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3 khách hàng </div>
-            <p className="text-xs text-muted-foreground">
-              +1 so với 7 ngày trước{" "}
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.invoice?.totalInvoice7days)} khách hàng{" "}
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.invoice?.totalInvoice7dayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.invoice?.totalInvoice7dayChange)} so
+              với 7 ngày trước{" "}
             </p>
           </CardContent>
         </Card>
@@ -112,9 +179,18 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">
-              +1 so với 30 ngày trước đó{" "}
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.revenue?.totalRevenue30days)} VND{" "}
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.revenue?.totalRevenue30dayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.revenue?.totalRevenue30dayChange)} so
+              với 30 ngày trước
             </p>
           </CardContent>
         </Card>
@@ -126,8 +202,19 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">+1 so với hôm qua</p>
+            <div className="text-2xl font-bold">
+              {formatNumber(revenue?.invoice?.totalInvoice30days)} khách hàng{" "}
+            </div>
+            <p
+              className={`text-xs ${
+                revenue?.invoice?.totalInvoice30dayChange >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {formatPercentage(revenue?.invoice?.totalInvoice30dayChange)} so
+              với 30 ngày trước{" "}
+            </p>
           </CardContent>
         </Card>
 
@@ -140,7 +227,13 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">Cắt tóc nam</div>
-            <p className="text-xs text-muted-foreground">8 lượt đặt hôm nay</p>
+            <p
+              className={`text-xs ${
+                30 >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {formatPercentage(8)} so với 8 ngày trước{" "}
+            </p>
           </CardContent>
         </Card>
       </div>
