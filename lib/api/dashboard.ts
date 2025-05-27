@@ -19,3 +19,23 @@ export async function getRevenue() {
     throw error;
   }
 }
+
+export async function getChartMonth() {
+  try {
+    const response = await api.get("/admin/dashboard/revenue-chart-month");
+    return response.data;
+  } catch (error) {
+    console.error("Chart month error:", error);
+    throw error;
+  }
+}
+
+export async function getChartDay() {
+  try {
+    const response = await api.get("/admin/dashboard/revenue-chart-day");
+    return response.data;
+  } catch (error) {
+    console.error("Chart day error:", error);
+    throw error;
+  }
+}

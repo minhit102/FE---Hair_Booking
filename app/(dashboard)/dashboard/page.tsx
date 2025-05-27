@@ -23,7 +23,8 @@ const formatNumber = (num: number) => {
 };
 
 // Add percentage formatting function
-const formatPercentage = (num: number) => {
+const formatPercentage = (num: number | undefined) => {
+  if (num === undefined) return "0.00%";
   const sign = num >= 0 ? "+" : "";
   return `${sign}${num.toFixed(2)}%`;
 };

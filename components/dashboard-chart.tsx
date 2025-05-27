@@ -1,4 +1,5 @@
 "use client";
+import { getChartDay, getChartMonth } from "@/lib/api/dashboard";
 import {
   LineChart,
   Line,
@@ -10,6 +11,9 @@ import {
   Bar,
   BarChart,
 } from "recharts";
+
+const dataChartMonth = getChartMonth();
+const dataChartDay = getChartDay();
 
 const data = [
   { name: "01/05", revenue: 2500000 },
