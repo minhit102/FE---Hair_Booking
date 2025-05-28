@@ -83,6 +83,7 @@ export function ServicesTable() {
           popular: serviceConvert.popular,
           image: serviceConvert.image,
           isActive: serviceConvert.isActive,
+          description: serviceConvert.description,
         })
       );
       setServices(formattedServices);
@@ -113,7 +114,9 @@ export function ServicesTable() {
         popular: editingService.popular,
         isActive: editingService.isActive,
         image: editingService.image,
+        description: editingService.description,
       });
+
       toast.success("Cập nhật dịch vụ thành công");
       setIsEditDialogOpen(false);
       // Refresh services list
@@ -130,6 +133,7 @@ export function ServicesTable() {
 
     try {
       await deleteService(deletingService._id);
+      console.log(deletingService._id);
       toast.success("Xóa dịch vụ thành công");
       setIsDeleteDialogOpen(false);
       // Refresh services list
@@ -186,7 +190,7 @@ export function ServicesTable() {
               <TableHead>Tên dịch vụ</TableHead>
               <TableHead>Giá</TableHead>
               <TableHead>Thời gian</TableHead>
-              <TableHead>Trạng thái</TableHead>
+              <TableHead>Ảnh dịch vụ</TableHead>
               <TableHead>Activity</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
@@ -212,11 +216,13 @@ export function ServicesTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {service.popular ? (
-                      <Badge>Phổ biến</Badge>
-                    ) : (
-                      <Badge variant="outline">Thông thường</Badge>
-                    )}
+                    <div className="relative h-10 w-10 overflow-hidden rounded-md">
+                      <img
+                        src={service.image}
+                        alt={service.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span
@@ -322,17 +328,33 @@ export function ServicesTable() {
                   }
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="popular"
-                  checked={editingService?.popular || false}
-                  onCheckedChange={(checked) =>
+              <div className="grid gap-2">
+                <Label>Ảnh hiện tại</Label>
+                {editingService?.image && (
+                  <img
+                    src={editingService.image}
+                    alt="Service image"
+                    className="w-32 h-32 object-cover rounded-md"
+                  />
+                )}
+                <Label htmlFor="image">Link ảnh mới</Label>
+                <Input
+                  id="image"
+                  value={editingService?.image || ""}
+                  onChange={(e) =>
                     setEditingService((prev) =>
-                      prev ? { ...prev, popular: checked } : null
+                      prev ? { ...prev, image: e.target.value } : null
                     )
                   }
+                  placeholder="Nhập URL ảnh"
                 />
-                <Label htmlFor="popular">Đánh dấu phổ biến</Label>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Mô tả</Label>
+                <Input
+                  id="description"
+                  value={editingService?.description || ""}
+                />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch

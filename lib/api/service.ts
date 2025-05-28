@@ -10,6 +10,7 @@ export interface Service {
   popular: boolean;
   isActive: boolean;
   category?: string;
+  description: string;
 }
 
 export interface UpdateServiceParams {
@@ -20,6 +21,7 @@ export interface UpdateServiceParams {
   image: string;
   popular: boolean;
   isActive: boolean;
+  description: string;
 }
 
 export async function getService() {
@@ -41,6 +43,7 @@ export const updateService = async (params: UpdateServiceParams) => {
       popular: params.popular,
       isActive: params.isActive,
       image: params.image,
+      description: params.description,
     });
     return response.data;
   } catch (error) {
