@@ -11,35 +11,38 @@ import {
   Bar,
   BarChart,
 } from "recharts";
+import { useEffect, useState } from "react";
 
-const dataChartMonth = getChartMonth();
-const dataChartDay = getChartDay();
-
-const data = [
-  { name: "01/05", revenue: 2500000 },
-  { name: "02/05", revenue: 3200000 },
-  { name: "03/05", revenue: 2800000 },
-  { name: "04/05", revenue: 3800000 },
-  { name: "05/05", revenue: 4100000 },
-  { name: "06/05", revenue: 3600000 },
-  { name: "07/05", revenue: 4250000 },
-  { name: "08/05", revenue: 2500000 },
-  { name: "09/05", revenue: 3200000 },
-  { name: "10/05", revenue: 2800000 },
-  { name: "11/05", revenue: 3800000 },
-  { name: "12/05", revenue: 4100000 },
-  { name: "13/05", revenue: 3600000 },
-  { name: "14/05", revenue: 4250000 },
-  { name: "15/05", revenue: 2500000 },
-  { name: "16/05", revenue: 3200000 },
-  { name: "17/05", revenue: 2800000 },
-  { name: "18/05", revenue: 3800000 },
-  { name: "19/05", revenue: 4100000 },
-  { name: "20/05", revenue: 3600000 },
-  { name: "21/05", revenue: 4250000 },
-];
+interface ChartData {
+  name: string;
+  revenue: number;
+}
 
 export function DashboardChart() {
+  const [data, setData] = useState<ChartData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const chartData = await getChartDay();
+        const formattedData = chartData.map((item: any) => {
+          const date = new Date(item.createdAt);
+          const day = String(date.getDate()).padStart(2, "0");
+          const month = String(date.getMonth() + 1).padStart(2, "0"); // Tháng bắt đầu từ 0
+          return {
+            name: `${day}/${month}`,
+            revenue: item?.totalRevenue || 0,
+          };
+        });
+        setData(formattedData);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu biểu đồ:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart
@@ -84,22 +87,37 @@ export function DashboardChart() {
   );
 }
 
-const dataByMonth = [
-  { name: "Tháng 1", revenue: 250000000 },
-  { name: "Tháng 2", revenue: 320000000 },
-  { name: "Tháng 3", revenue: 280000000 },
-  { name: "Tháng 4", revenue: 380000000 },
-  { name: "Tháng 5", revenue: 410000000 },
-  { name: "Tháng 6", revenue: 360000000 },
-  { name: "Tháng 7", revenue: 425000000 },
-  { name: "Tháng 8", revenue: 250000000 },
-  { name: "Tháng 9", revenue: 320000000 },
-  { name: "Tháng 10", revenue: 280000000 },
-  { name: "Tháng 11", revenue: 380000000 },
-  { name: "Tháng 12", revenue: 410000000 },
-];
+// const dataByMonth = [
+//   { name: "Tháng 1", revenue: 250000000 },
+//   { name: "Tháng 2", revenue: 320000000 },
+//   { name: "Tháng 3", revenue: 280000000 },
+//   { name: "Tháng 4", revenue: 380000000 },
+//   { name: "Tháng 5", revenue: 410000000 },
+//   { name: "Tháng 6", revenue: 360000000 },
+//   { name: "Tháng 7", revenue: 425000000 },
+//   { name: "Tháng 8", revenue: 250000000 },
+//   { name: "Tháng 9", revenue: 320000000 },
+//   { name: "Tháng 10", revenue: 280000000 },
+//   { name: "Tháng 11", revenue: 380000000 },
+//   { name: "Tháng 12", revenue: 410000000 },
+// ];
 
 export function DashboardChartByMonth() {
+  const [dataByMonth, setDataByMonth] = useState<ChartData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const chartData = await getChartMonth();
+      setDataByMonth(
+        chartData.map((item: any) => ({
+          name: item.createdAt.split("T")[0].slice(0, 7),
+          revenue: item?.totalRevenue || 0,
+        }))
+      );
+    };
+    fetchData();
+  }, []);
+
   return (
     <ResponsiveContainer width="100%" height={500}>
       <BarChart

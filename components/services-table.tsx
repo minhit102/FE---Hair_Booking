@@ -28,8 +28,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, MoreHorizontal, Search } from "lucide-react";
-import { getService } from "@/lib/api/service";
+import {
+  getService,
+  updateService,
+  deleteService,
+  Service,
+} from "@/lib/api/service";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const getServices = async () => {
   const response = await getService();
@@ -39,7 +64,11 @@ const getServices = async () => {
 export function ServicesTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deletingService, setDeletingService] = useState<Service | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -52,6 +81,7 @@ export function ServicesTable() {
           price: serviceConvert.price,
           duration: serviceConvert.duration,
           popular: serviceConvert.popular,
+          image: serviceConvert.image,
           isActive: serviceConvert.isActive,
         })
       );
@@ -59,6 +89,57 @@ export function ServicesTable() {
     };
     fetchServices();
   }, []);
+
+  const handleEdit = (service: Service) => {
+    setEditingService(service);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (service: Service) => {
+    setDeletingService(service);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingService) return;
+
+    try {
+      await updateService({
+        id: editingService._id,
+        name: editingService.name,
+        price: editingService.price,
+        duration: editingService.duration,
+        popular: editingService.popular,
+        isActive: editingService.isActive,
+        image: editingService.image,
+      });
+      toast.success("Cập nhật dịch vụ thành công");
+      setIsEditDialogOpen(false);
+      // Refresh services list
+      const data = await getServices();
+      setServices(data);
+    } catch (error) {
+      toast.error("Không thể cập nhật dịch vụ");
+      console.error("Update service error:", error);
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!deletingService) return;
+
+    try {
+      await deleteService(deletingService._id);
+      toast.success("Xóa dịch vụ thành công");
+      setIsDeleteDialogOpen(false);
+      // Refresh services list
+      const data = await getServices();
+      setServices(data);
+    } catch (error) {
+      toast.error("Không thể xóa dịch vụ");
+      console.error("Delete service error:", error);
+    }
+  };
 
   const filteredServices = services.filter((service) => {
     const matchesSearch = service.name
@@ -70,6 +151,7 @@ export function ServicesTable() {
 
     return matchesSearch && matchesCategory;
   });
+
   const formatPrice = (price: any) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -156,10 +238,29 @@ export function ServicesTable() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Chỉnh sửa</DropdownMenuItem>
-                        <DropdownMenuItem>Đánh dấu phổ biến</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(service)}>
+                          Chỉnh sửa
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const updatedService = {
+                              ...service,
+                              popular: !service.popular,
+                            };
+                            handleEdit(updatedService);
+                          }}
+                        >
+                          {service.popular
+                            ? "Bỏ đánh dấu phổ biến"
+                            : "Đánh dấu phổ biến"}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Xóa dịch vụ</DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(service)}
+                        >
+                          Xóa dịch vụ
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -169,6 +270,115 @@ export function ServicesTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa dịch vụ</DialogTitle>
+            <DialogDescription>
+              Thay đổi thông tin dịch vụ. Nhấn lưu khi hoàn tất.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateService}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Tên dịch vụ</Label>
+                <Input
+                  id="name"
+                  value={editingService?.name || ""}
+                  onChange={(e) =>
+                    setEditingService((prev) =>
+                      prev ? { ...prev, name: e.target.value } : null
+                    )
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="price">Giá</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  value={editingService?.price || ""}
+                  onChange={(e) =>
+                    setEditingService((prev) =>
+                      prev ? { ...prev, price: Number(e.target.value) } : null
+                    )
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="duration">Thời gian (phút)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={editingService?.duration || ""}
+                  onChange={(e) =>
+                    setEditingService((prev) =>
+                      prev
+                        ? { ...prev, duration: Number(e.target.value) }
+                        : null
+                    )
+                  }
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="popular"
+                  checked={editingService?.popular || false}
+                  onCheckedChange={(checked) =>
+                    setEditingService((prev) =>
+                      prev ? { ...prev, popular: checked } : null
+                    )
+                  }
+                />
+                <Label htmlFor="popular">Đánh dấu phổ biến</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={editingService?.isActive || false}
+                  onCheckedChange={(checked) =>
+                    setEditingService((prev) =>
+                      prev ? { ...prev, isActive: checked } : null
+                    )
+                  }
+                />
+                <Label htmlFor="isActive">Đang hoạt động</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Lưu thay đổi</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Bạn có chắc chắn muốn xóa dịch vụ này?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Dịch vụ sẽ bị xóa vĩnh viễn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteService}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

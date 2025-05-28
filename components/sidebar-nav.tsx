@@ -55,7 +55,7 @@ const sidebarNavItems = [
     title: "Customers",
     href: "/customers",
     icon: UserRound,
-    label: "Khách hàng",
+    label: "Thống kê đơn hàng",
   },
   {
     title: "Settings",

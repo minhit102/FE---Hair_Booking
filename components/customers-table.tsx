@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -28,108 +28,71 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MoreHorizontal, Search, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Search,
+  Star,
+} from "lucide-react";
+import { getCustomers } from "@/lib/api/customer";
+import { toast } from "sonner";
 
-const customers = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    phone: "0901234567",
-    email: "nguyenvana@example.com",
-    visits: 12,
-    lastVisit: "05/05/2023",
-    favoriteService: "Cắt tóc nam",
-    isRegular: true,
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    phone: "0901234568",
-    email: "tranthib@example.com",
-    visits: 8,
-    lastVisit: "28/04/2023",
-    favoriteService: "Nhuộm tóc",
-    isRegular: true,
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    phone: "0901234569",
-    email: "levanc@example.com",
-    visits: 5,
-    lastVisit: "15/04/2023",
-    favoriteService: "Uốn tóc",
-    isRegular: false,
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    phone: "0901234570",
-    email: "phamthid@example.com",
-    visits: 3,
-    lastVisit: "10/04/2023",
-    favoriteService: "Gội đầu",
-    isRegular: false,
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    phone: "0901234571",
-    email: "hoangvane@example.com",
-    visits: 15,
-    lastVisit: "02/05/2023",
-    favoriteService: "Cắt tóc nam",
-    isRegular: true,
-  },
-  {
-    id: 6,
-    name: "Đỗ Thị F",
-    phone: "0901234572",
-    email: "dothif@example.com",
-    visits: 7,
-    lastVisit: "25/04/2023",
-    favoriteService: "Nhuộm tóc",
-    isRegular: true,
-  },
-  {
-    id: 7,
-    name: "Vũ Văn G",
-    phone: "0901234573",
-    email: "vuvang@example.com",
-    visits: 2,
-    lastVisit: "18/04/2023",
-    favoriteService: "Cắt tóc nữ",
-    isRegular: false,
-  },
-  {
-    id: 8,
-    name: "Ngô Thị H",
-    phone: "0901234574",
-    email: "ngothih@example.com",
-    visits: 1,
-    lastVisit: "05/04/2023",
-    favoriteService: "Gội đầu",
-    isRegular: false,
-  },
-];
+interface Invoice {
+  id: string;
+  name: string;
+  phone: string;
+  service: string;
+  stylist: string;
+  total: number;
+  date: Date;
+  reviewRating: number;
+}
+
+interface PaginatedResponse {
+  invoices: Invoice[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
 
 export function CustomersTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [customers, setCustomers] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const itemsPerPage = 10;
 
-  const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await getCustomers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm,
+        status: statusFilter,
+      });
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "regular" && customer.isRegular) ||
-      (statusFilter === "new" && !customer.isRegular);
+      console.log(response);
+      const data: PaginatedResponse = response;
+      setCustomers(data?.invoices || []);
+      setTotalPages(data?.totalPages || 1);
+      setTotalItems(data?.total || 0);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      toast.error("Không thể tải danh sách khách hàng");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    fetchCustomers();
+  }, [currentPage, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-4">
@@ -166,22 +129,30 @@ export function CustomersTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Khách hàng</TableHead>
-              <TableHead>Số lần sử dụng</TableHead>
-              <TableHead>Lần cuối</TableHead>
-              <TableHead>Dịch vụ yêu thích</TableHead>
-              <TableHead>Trạng thái</TableHead>
+              <TableHead>Số điện thoại</TableHead>
+              <TableHead>Ngày</TableHead>
+              <TableHead>Dịch vụ </TableHead>
+              <TableHead>Stylist</TableHead>
+              <TableHead>Tiền thanh toán</TableHead>
+              <TableHead>Đánh giá</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Đang tải...
+                </TableCell>
+              </TableRow>
+            ) : customers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   Không tìm thấy khách hàng nào
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCustomers.map((customer) => (
+              customers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -190,28 +161,23 @@ export function CustomersTable() {
                           {customer.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="font-medium">{customer.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {customer.phone}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {customer.email}
-                        </div>
-                      </div>
                     </div>
                   </TableCell>
-                  <TableCell>{customer.visits} lần</TableCell>
-                  <TableCell>{customer.lastVisit}</TableCell>
-                  <TableCell>{customer.favoriteService}</TableCell>
+                  <TableCell>{customer.phone || "--"}</TableCell>
                   <TableCell>
-                    {customer.isRegular ? (
-                      <Badge>
-                        <Star className="mr-1 h-3 w-3 fill-primary text-primary" />
-                        Khách quen
-                      </Badge>
+                    {new Date(customer.date).toLocaleDateString("vi-VN")}
+                  </TableCell>
+                  <TableCell>{customer.service}</TableCell>
+                  <TableCell>{customer.stylist}</TableCell>
+                  <TableCell>{customer.total}</TableCell>
+                  <TableCell>
+                    {customer.reviewRating ? (
+                      <div className="flex items-center gap-1">
+                        {customer.reviewRating}
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      </div>
                     ) : (
-                      <Badge variant="outline">Khách mới</Badge>
+                      "--"
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -240,6 +206,37 @@ export function CustomersTable() {
           </TableBody>
         </Table>
       </div>
+
+      {!isLoading && customers.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+          <div className="text-sm text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
+            {Math.min(currentPage * itemsPerPage, totalItems)} của {totalItems}{" "}
+            khách hàng
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm">
+              Trang {currentPage} / {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages || isLoading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
