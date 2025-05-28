@@ -24,6 +24,16 @@ export interface UpdateServiceParams {
   description: string;
 }
 
+export interface CreateServiceParams {
+  name: string;
+  price: number;
+  duration: number;
+  image: string;
+  popular: boolean;
+  isActive: boolean;
+  description: string;
+}
+
 export async function getService() {
   try {
     const response = await api.get("/admin/service");
@@ -58,6 +68,16 @@ export const deleteService = async (id: string) => {
     return response.data;
   } catch (error) {
     console.error("Delete service error:", error);
+    throw error;
+  }
+};
+
+export const createService = async (params: CreateServiceParams) => {
+  try {
+    const response = await api.post("/admin/service", params);
+    return response.data;
+  } catch (error) {
+    console.error("Create service error:", error);
     throw error;
   }
 };
