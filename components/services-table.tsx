@@ -61,7 +61,11 @@ const getServices = async () => {
   return response;
 };
 
-export function ServicesTable() {
+interface ServicesTableProps {
+  refreshTrigger?: number;
+}
+
+export function ServicesTable({ refreshTrigger = 0 }: ServicesTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [services, setServices] = useState<Service[]>([]);
@@ -89,7 +93,7 @@ export function ServicesTable() {
       setServices(formattedServices);
     };
     fetchServices();
-  }, []);
+  }, [refreshTrigger]);
 
   const handleEdit = (service: Service) => {
     setEditingService(service);

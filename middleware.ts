@@ -6,7 +6,8 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Define paths that are considered public (don't require authentication)
-  const isPublicPath = path === "/login" || path === "/forgot-password";
+  const isPublicPath =
+    path === "/login" || path === "/forgot-password" || path === "/";
 
   // Check if the user is authenticated by looking for the auth cookie
   const isAuthenticated = request.cookies.has("salon-auth");

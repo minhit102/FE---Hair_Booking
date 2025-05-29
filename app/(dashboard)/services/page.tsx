@@ -27,6 +27,7 @@ import { toast } from "sonner";
 
 export default function ServicesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [newService, setNewService] = useState({
     name: "",
     price: 0,
@@ -43,6 +44,7 @@ export default function ServicesPage() {
       await createService(newService);
       toast.success("Thêm dịch vụ thành công");
       setIsCreateDialogOpen(false);
+      setRefreshTrigger((prev) => prev + 1);
       // Reset form
       setNewService({
         name: "",
@@ -77,7 +79,7 @@ export default function ServicesPage() {
           <CardDescription>Quản lý các dịch vụ của salon</CardDescription>
         </CardHeader>
         <CardContent>
-          <ServicesTable />
+          <ServicesTable refreshTrigger={refreshTrigger} />
         </CardContent>
       </Card>
 
