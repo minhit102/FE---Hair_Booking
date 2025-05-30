@@ -92,3 +92,8 @@ export const createHairStylist = async (params: CreateEmployeeParams) => {
   const response = await api.post("/admin/hair-stylist", params);
   return response.data;
 };
+
+export const getReviewsByStylistId = async ({ id }: { id: string }) => {
+  const response = await api.get(`/reviews/hair-stylist/${id}`);
+  return response.data;
+};

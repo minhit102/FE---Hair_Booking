@@ -15,7 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { getHairStylistById } from "@/lib/api/hair-stylist";
+import {
+  getHairStylistById,
+  getReviewsByStylistId,
+} from "@/lib/api/hair-stylist";
 
 interface StylistDetail {
   id: string;
@@ -34,11 +37,22 @@ interface StylistDetail {
   joinDate?: string;
 }
 
+interface Review {
+  id: string;
+  customerName: string;
+  customerAvatar?: string;
+  rating: number;
+  comment: string;
+  date: string;
+  serviceName: string;
+}
+
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [employee, setEmployee] = useState<StylistDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -52,6 +66,16 @@ export default function EmployeeDetailPage() {
       }
     };
 
+    const fetchReviews = async () => {
+      try {
+        const response = await getReviewsByStylistId({
+          id: params.id as string,
+        });
+        setReviews(response);
+      } catch (error) {
+        toast.error("Không thể tải đánh giá");
+      }
+    };
     fetchEmployee();
   }, [params.id]);
 
@@ -264,10 +288,61 @@ export default function EmployeeDetailPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Add reviews component here */}
-                  <p className="text-muted-foreground">
-                    Chức năng đang được phát triển...
-                  </p>
+                  <div className="space-y-6">
+                    {reviews.length > 0 ? (
+                      reviews.map((review) => (
+                        <div
+                          key={review.id}
+                          className="border-b pb-6 last:border-0"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                {review.customerAvatar ? (
+                                  <AvatarImage
+                                    src={review.customerAvatar}
+                                    alt={review.customerName}
+                                  />
+                                ) : (
+                                  <AvatarFallback>
+                                    {review.customerName.charAt(0)}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div>
+                                <h4 className="font-medium">
+                                  {review.customerName}
+                                </h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(review.date).toLocaleDateString(
+                                    "vi-VN"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">
+                                {review.rating}
+                              </span>
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Dịch vụ: {review.serviceName}
+                            </p>
+                            <p className="text-sm">{review.comment}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Chưa có đánh giá nào cho nhân viên này
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
