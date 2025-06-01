@@ -40,6 +40,7 @@ import {
   getAppointments,
   updateAppointmentStatus,
 } from "@/lib/api/appointment";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Define types for our data
 interface Appointment {
@@ -76,6 +77,24 @@ export function AppointmentsTable() {
   // Data state
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Function to get random pastel color
+  const getRandomPastelColor = (username: string) => {
+    const colors = [
+      "bg-blue-100 text-blue-700",
+      "bg-green-100 text-green-700",
+      "bg-purple-100 text-purple-700",
+      "bg-pink-100 text-pink-700",
+      "bg-orange-100 text-orange-700",
+      "bg-teal-100 text-teal-700",
+      "bg-indigo-100 text-indigo-700",
+      "bg-rose-100 text-rose-700",
+    ];
+
+    // Use the first character's ASCII code to consistently get the same color for the same username
+    const charCode = username.charCodeAt(0);
+    return colors[charCode % colors.length];
+  };
 
   // Function to fetch appointments from API
   const fetchAppointments = async () => {
@@ -196,9 +215,22 @@ export function AppointmentsTable() {
               appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
                   <TableCell>
-                    <div className="font-medium">{appointment.username}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {appointment.phone}
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback
+                          className={getRandomPastelColor(appointment.username)}
+                        >
+                          {appointment.username.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">
+                          {appointment.username}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {appointment.phone}
+                        </div>
+                      </div>
                     </div>
                   </TableCell>
 
