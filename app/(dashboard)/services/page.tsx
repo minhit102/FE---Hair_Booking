@@ -66,7 +66,10 @@ export default function ServicesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dịch vụ</h1>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Thêm dịch vụ
           </Button>
