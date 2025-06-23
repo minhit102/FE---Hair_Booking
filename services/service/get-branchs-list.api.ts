@@ -9,3 +9,13 @@ export const getBranchsList = async () => {
     throw error;
   }
 };
+
+export const getHaiStyleList = async () => {
+  try {
+    const response = await api.get("/hair-styles/list");
+    return response.data;
+  } catch (error) {
+    console.error("Get branchs list error:", error);
+    throw error;
+  }
+};
