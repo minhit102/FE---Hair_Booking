@@ -1,4 +1,5 @@
 import axios from "axios";
+import api from "../axios";
 
 export interface RegisterUserData {
   username: string;
@@ -9,6 +10,17 @@ export interface RegisterUserData {
 }
 
 export async function registerUser(data: RegisterUserData) {
-  const response = await axios.post("/auth/register", data);
+  console.log("======================================================");
+  const response = await api.post("/auth/register", data);
   return response.data;
 }
+
+// export const login = async (credentials: LoginCredentials) => {
+//   try {
+//     const response = await api.post("/auth/login", credentials);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     throw error;
+//   }
+// };

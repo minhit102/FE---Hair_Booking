@@ -49,7 +49,7 @@ export default function RegisterPage() {
       toast.success("Đăng ký thành công!");
       router.push("/auth/login");
     } catch (error) {
-      toast.error("Đăng ký thất bại. Vui lòng thử lại.");
+      toast.error("Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.");
     } finally {
       setIsLoading(false);
     }
