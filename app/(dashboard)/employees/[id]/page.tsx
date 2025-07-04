@@ -68,15 +68,27 @@ export default function EmployeeDetailPage() {
 
     const fetchReviews = async () => {
       try {
-        const response = await getReviewsByStylistId({
+        const responses = await getReviewsByStylistId({
           id: params.id as string,
         });
-        setReviews(response);
+        const convertReview = responses.map((res: any) => {
+          return {
+            id: res.review._id,
+            customerName: res.userName,
+            customerAvatar: res.service.image || "",
+            rating: res.review.rating,
+            comment: res.review.review,
+            date: res.review.updatedAt,
+            serviceName: res.service.name,
+          };
+        });
+        setReviews(convertReview);
       } catch (error) {
         toast.error("Không thể tải đánh giá");
       }
     };
     fetchEmployee();
+    fetchReviews();
   }, [params.id]);
 
   if (isLoading) {
