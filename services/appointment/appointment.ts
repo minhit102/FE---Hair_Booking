@@ -7,6 +7,7 @@ interface AppointmentData {
   date: Date;
   notes?: string;
   username?: string;
+  hairStylistId?: string;
 }
 
 export const statusAppointment = {

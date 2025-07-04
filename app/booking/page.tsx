@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -53,7 +53,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { getServiceList } from "@/services/service/get-service-list.api";
-import { getBranchsList } from "@/services/service/get-branchs-list.api";
+import {
+  getAllStylists,
+  getAvailableBooking,
+  getBranchsList,
+} from "@/services/service/get-branchs-list.api";
 import { toast } from "sonner";
 import { createAppointment } from "@/services/appointment/appointment";
 import { useSelector } from "react-redux";
@@ -67,6 +71,7 @@ const formatPrice = (price: number) => {
 // Dữ liệu mẫu cho dịch vụ
 const services = await getServiceList();
 const branchs = await getBranchsList();
+const allStylists = await getAllStylists();
 // Dữ liệu mẫu cho nhân viên
 
 // Dữ liệu mẫu cho khung giờ
@@ -96,7 +101,7 @@ const timeSlots = [
 const formSchema = z.object({
   service: z.string({ required_error: "Vui lòng chọn dịch vụ" }),
   branch: z.string({ required_error: "Vui lòng chọn Branch" }),
-  // stylist: z.string({ required_error: "Vui lòng chọn thợ cắt tóc" }),
+  stylist: z.string({ required_error: "Vui lòng chọn thợ cắt tóc" }),
   date: z.date({ required_error: "Vui lòng chọn ngày" }),
   time: z.string({ required_error: "Vui lòng chọn giờ" }),
   name: z.string().min(2, { message: "Vui lòng nhập tên của bạn" }),
@@ -109,6 +114,9 @@ export default function BookingPage() {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [isBookingComplete, setIsBookingComplete] = useState(false);
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [selectedBranch, setSelectedBranch] = useState<string>("");
+  const [stylists, setStylists] = useState<any[]>([]);
+  const [availableTimes, setAvailableTimes] = useState<string[]>(timeSlots);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -116,6 +124,7 @@ export default function BookingPage() {
       name: "",
       phone: "",
       notes: "",
+      stylist: "",
     },
   });
 
@@ -142,6 +151,7 @@ export default function BookingPage() {
         phone: values.phone,
         notes: values.notes,
         username: values.name,
+        hairStylistId: form.getValues("stylist"),
       });
 
       console.log("==========================================", response);
@@ -155,6 +165,23 @@ export default function BookingPage() {
       toast.error("Xin lỗi, khung giờ bạn chọn hiện không còn trống.");
     }
   }
+
+  // Mock API function (replace with real API call)
+  async function getAvailableTimes(stylistId: string, date: Date) {
+    const dataAvaiableBooking = await getAvailableBooking(stylistId, date);
+    return dataAvaiableBooking;
+  }
+
+  // useEffect to fetch available times when stylist and date are selected
+  useEffect(() => {
+    const stylistId = form.getValues("stylist");
+    const date = form.getValues("date");
+    if (stylistId && date) {
+      getAvailableTimes(stylistId, date).then(setAvailableTimes);
+    } else {
+      setAvailableTimes(timeSlots);
+    }
+  }, [form.watch("stylist"), form.watch("date")]);
 
   if (isBookingComplete) {
     return (
@@ -433,10 +460,19 @@ export default function BookingPage() {
                         name="branch"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Chọn Branch </FormLabel>
+                            <FormLabel>Chọn Branch</FormLabel>
                             <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setSelectedBranch(value);
+                                setStylists(
+                                  allStylists.filter(
+                                    (stylist: any) => stylist.branchId === value
+                                  )
+                                );
+                                form.setValue("stylist", ""); // reset stylist when branch changes
+                              }}
+                              value={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -458,6 +494,65 @@ export default function BookingPage() {
                           </FormItem>
                         )}
                       />
+
+                      {/* Show stylist select only if a branch is selected */}
+                      {selectedBranch && (
+                        <FormField
+                          control={form.control}
+                          name="stylist"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Chọn thợ cắt tóc</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value as string}
+                                disabled={!selectedBranch}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue
+                                      placeholder={
+                                        !selectedBranch
+                                          ? "Vui lòng chọn chi nhánh trước"
+                                          : "Chọn thợ cắt tóc"
+                                      }
+                                    />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {!selectedBranch ? (
+                                    <SelectItem
+                                      key="no-branch"
+                                      value=""
+                                      disabled
+                                    >
+                                      Vui lòng chọn chi nhánh trước
+                                    </SelectItem>
+                                  ) : stylists.length === 0 ? (
+                                    <SelectItem
+                                      key="no-stylist"
+                                      value=""
+                                      disabled
+                                    >
+                                      Không có thợ nào cho chi nhánh này
+                                    </SelectItem>
+                                  ) : (
+                                    stylists.map((stylist: any) => (
+                                      <SelectItem
+                                        key={stylist._id}
+                                        value={stylist._id}
+                                      >
+                                        {stylist.username}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                       <FormField
                         control={form.control}
@@ -515,7 +610,7 @@ export default function BookingPage() {
                               defaultValue={field.value}
                               className="grid grid-cols-4 gap-2 md:grid-cols-8"
                             >
-                              {timeSlots.map((time) => (
+                              {availableTimes.map((time) => (
                                 <div key={time}>
                                   <RadioGroupItem
                                     value={time}

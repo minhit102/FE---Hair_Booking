@@ -19,3 +19,28 @@ export const getHaiStyleList = async () => {
     throw error;
   }
 };
+
+export const getAllStylists = async () => {
+  try {
+    const response = await api.get("/hair-styles/list-hair-stylist");
+    return response.data;
+  } catch (error) {
+    console.error("Get hair-stylist list error:", error);
+    throw error;
+  }
+};
+
+export const getAvailableBooking = async (stylistId: any, date: any) => {
+  try {
+    const response = await api.get("/appointments/available-times", {
+      params: {
+        stylistId,
+        date,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Get available times error:", error);
+    throw error;
+  }
+};
